@@ -371,12 +371,12 @@
 .installOptions > div { display: grid; gap: 6px; }
 .installOptions strong { font-size: 12px; font-weight: 550; }
 .installOptions small { color: var(--dsw-alias-label-caption); font-size: 11px; line-height: 17px; }
-.installOptions > .manualInstallGuide { display: grid; min-height: 108px; align-content: center; gap: 7px; padding: 13px 14px; border: 1px solid color-mix(in srgb, var(--dsw-alias-brand-primary) 28%, var(--dsw-alias-border-l2)); border-radius: 12px; background: color-mix(in srgb, var(--dsw-alias-brand-primary) 7%, var(--dsw-alias-bg-layer-1)); }
+.installOptions > .manualInstallGuide { display: grid; gap: 7px; }
 .manualInstallGuide p { margin: 0; color: var(--dsw-alias-label-secondary); font-size: 11px; line-height: 18px; }
-.manualInstallGuide a { display: inline-flex; width: fit-content; align-items: center; gap: 5px; color: var(--dsw-alias-link-primary, var(--dsw-alias-brand-primary)); font-size: 11px; line-height: 18px; text-decoration: none; }
-.manualInstallGuide a:hover { text-decoration: underline; text-underline-offset: 2px; }
 .copyCapsule { display: flex; min-width: 0; align-items: center; padding-left: 12px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 17px; background: var(--dsw-alias-bg-layer-1); }
 .copyCapsule code { min-width: 0; flex: 1; overflow: hidden; color: var(--dsw-alias-label-secondary); font: 11px/32px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.copyCapsuleInput { display: block; min-width: 0; flex: 1; overflow: hidden; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.copyCapsuleInput input { width: 100%; min-width: 0; overflow: hidden; border: 0; outline: none; background: transparent; color: var(--dsw-alias-label-secondary); font: 11px/32px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; text-overflow: ellipsis; white-space: nowrap; }
 .copyCapsule .copyCapsuleButton { flex: none; }
 .stars { display: inline-flex; flex: none; align-items: center; gap: 5px; color: var(--dsw-alias-label-secondary); font-size: 12px; line-height: 20px; white-space: nowrap; }
 .actionDivider { width: 1px; height: 22px; margin: 0 3px; background: var(--dsw-alias-border-l2); }

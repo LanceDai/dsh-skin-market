@@ -24,8 +24,8 @@ install:
     mode: managed
     registry: npm
     packageName: dsh-glass-ui-theme
-    packageVersion: 0.2.5
-    integrity: sha512-0v+vyMLCxiso9CRNwzjZnOzKFcQ8+XFiWv4VkcBKmssRbJhbNlixa1ex0gmboWbIQsazDbBeTruYgPSqr/xZTQ==
+    packageVersion: 0.2.6
+    integrity: sha512-i2yQELyMJxrvoR4tKqAx+LJxEwUJNXOmNYdy8D8O8GFxwNpNuCvEH0P9zFcJqKWH0lQTRytOSnU4Q5WMfU5KSg==
   npm:
     name: dsh-glass-ui-theme
     version: 0.2.6

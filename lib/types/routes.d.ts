@@ -21,15 +21,16 @@ export interface AgentRegistryLike {
 }
 export interface SkinMarketHost extends LifecycleHost {
     webServer: WebServerService;
-    agents: AgentRegistryLike;
+    agents?: AgentRegistryLike;
 }
 export interface RouteOptions {
     profile: string;
-    profileDir: string;
+    profileDir?: string;
     runner: PluginRunner;
     hostKind?: MarketHostKind;
     runtime?: DshRuntime;
     restart?: RestartScheduler;
+    agents?: AgentRegistryLike;
     catalogStore?: CatalogStore;
     marketUpdater?: MarketUpdater;
 }

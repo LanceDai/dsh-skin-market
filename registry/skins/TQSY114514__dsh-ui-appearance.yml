@@ -20,11 +20,8 @@ install:
   version: 0.1.12
   commit: 5c8a1e0a4bce3de76721e5698d5e105d09a74509
   desktop:
-    mode: managed
-    registry: npm
-    packageName: dsh-ui-appearance
-    packageVersion: 0.1.5
-    integrity: sha512-FxpfjB2Xv8klJvzKGv9nPv8Y+gq2NWCIw1bch6Rz2F1/zWSI+kCbonhapyomz/fqyki1S0EuLrvIyXNcfydsCQ==
+    mode: manual-only
+    reason: npm-source-unverified
   allowBuild: dsh-ui-appearance@https://codeload.github.com/TQSY114514/dsh-ui-appearance/tar.gz/5c8a1e0a4bce3de76721e5698d5e105d09a74509
 compatibility:
   dsh: unverified

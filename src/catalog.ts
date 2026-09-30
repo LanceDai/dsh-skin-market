@@ -31,6 +31,14 @@ export function validateCatalog(value: unknown): CatalogFile {
       throw new Error(`invalid skin entry: ${details}`)
     }
     const entry = skin as SkinEntry
+    if (entry.install.desktop?.mode === 'managed') {
+      if (entry.install.desktop.packageName !== entry.package) {
+        throw new Error(`invalid Desktop package name for ${entry.id}: expected ${entry.package}`)
+      }
+      if (entry.install.desktop.packageVersion !== entry.install.version) {
+        throw new Error(`invalid Desktop package version for ${entry.id}: expected ${entry.install.version}`)
+      }
+    }
     if (!isVersionRange(entry.compatibility.dsh)) throw new Error(`invalid DSH compatibility range for ${entry.id}`)
     for (const adapter of entry.compatibility.adapters ?? []) {
       if (!isVersionRange(adapter.when)) throw new Error(`invalid compatibility adapter range for ${entry.id}: ${adapter.id}`)

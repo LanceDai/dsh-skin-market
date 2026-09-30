@@ -1,10 +1,9 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { randomUUID } from 'node:crypto'
-import { join } from 'node:path'
 import { CatalogStore, catalogWithStars } from './catalog.ts'
 import { readOperationRetryAction, readRestartTarget, readSkinId, sameOrigin, sendJson, sendText } from './http.ts'
 import { SkinLifecycle, type LifecycleHost } from './lifecycle.ts'
-import { installedClientPlugins } from './profile.ts'
+import { installedClientPlugins, resolveProfileDir } from './profile.ts'
 import type { PluginRunner } from './commands.ts'
 import type { DshRuntime, MarketHostKind, Operation, OperationKind } from './types.ts'
 import type { RestartScheduler } from './restart.ts'
@@ -28,10 +27,10 @@ export interface AgentRegistryLike { list(): AgentLike[] }
 
 export interface SkinMarketHost extends LifecycleHost {
   webServer: WebServerService
-  agents: AgentRegistryLike
+  agents?: AgentRegistryLike
 }
 
-export interface RouteOptions { profile: string; profileDir: string; runner: PluginRunner; hostKind?: MarketHostKind; runtime?: DshRuntime; restart?: RestartScheduler; catalogStore?: CatalogStore; marketUpdater?: MarketUpdater }
+export interface RouteOptions { profile: string; profileDir?: string; runner: PluginRunner; hostKind?: MarketHostKind; runtime?: DshRuntime; restart?: RestartScheduler; agents?: AgentRegistryLike; catalogStore?: CatalogStore; marketUpdater?: MarketUpdater }
 
 export function canRestartSkin(state: ReturnType<SkinLifecycle['states']>[number] | undefined): boolean {
   return state?.installation === 'installed'
@@ -39,7 +38,7 @@ export function canRestartSkin(state: ReturnType<SkinLifecycle['states']>[number
 }
 
 export function runningAgentCount(host: Pick<SkinMarketHost, 'agents'>): number {
-  return host.agents.list().filter(agent => agent.status === 'running').length
+  return host.agents?.list().filter(agent => agent.status === 'running').length ?? 0
 }
 
 const RESTART_BLOCKING_KINDS = new Set<Operation['kind']>(['install', 'update', 'migrate', 'uninstall'])
@@ -68,7 +67,7 @@ export function assertRestartClearOfSkinOperations(
 }
 
 export async function waitForRestartSafety(host: Pick<SkinMarketHost, 'agents'>): Promise<void> {
-  const agents = host.agents.list()
+  const agents = host.agents?.list() ?? []
   const running = agents.filter(agent => agent.status === 'running').length
   if (running > 0) throw new Error(`检测到 ${running} 个 Agent 正在运行，请等待任务完全结束后再重启`)
 
@@ -87,14 +86,37 @@ function method(request: IncomingMessage, response: ServerResponse, expected: st
 }
 
 export function mountRoutes(host: SkinMarketHost, options: RouteOptions): () => void {
-  const catalogStore = options.catalogStore ?? new CatalogStore(options.profileDir)
+  // Resolve once at the route boundary so every lifecycle/catalog operation
+  // uses the same profile. In particular, an official Desktop route with no
+  // profileContext.dir resolves the Desktop profile and never silently uses
+  // the Web profile.
+  const profileDir = options.profileDir ?? resolveProfileDir(options.profile)
+  const catalogStore = options.catalogStore ?? new CatalogStore(profileDir)
   const initialCatalog = catalogStore.snapshot().catalog
   const hostKind = options.hostKind ?? options.runner.hostKind ?? 'dsh'
-  const lifecycle = new SkinLifecycle(host, { ...options, hostKind }, initialCatalog.skins)
+  // Keep the optional Agent registry on a prototype wrapper so Cordis host
+  // methods and lifecycle services retain their original receiver. Official
+  // Desktop simply leaves this undefined; Web keeps the existing restart
+  // safety checks when the service is available.
+  // An explicit `agents: undefined` is meaningful for official Desktop: its
+  // host exposes a throwing lazy-injection getter when the Agent service is
+  // absent. Shadow that getter while preserving the original host object when
+  // callers omit the option entirely.
+  let routeHost = host
+  if (Object.prototype.hasOwnProperty.call(options, 'agents')) {
+    routeHost = Object.create(host) as SkinMarketHost
+    Object.defineProperty(routeHost, 'agents', {
+      configurable: true,
+      enumerable: true,
+      value: options.agents,
+      writable: true,
+    })
+  }
+  const lifecycle = new SkinLifecycle(routeHost, { ...options, profileDir, hostKind }, initialCatalog.skins)
   lifecycle.start()
   let lifecycleCatalogGeneratedAt = initialCatalog.generatedAt
   const instanceId = randomUUID()
-  const marketUpdater = options.marketUpdater ?? createMarketUpdater(options.profile, options.runner)
+  const marketUpdater = options.marketUpdater ?? createMarketUpdater(options.profile, options.runner, { profileDir })
 
   const catalogPayload = async (force: boolean) => {
     const snapshot = await catalogStore.refresh(force)
@@ -105,7 +127,7 @@ export function mountRoutes(host: SkinMarketHost, options: RouteOptions): () => 
     return {
       schemaVersion: snapshot.catalog.schemaVersion,
       generatedAt: snapshot.catalog.generatedAt,
-      skins: await catalogWithStars(options.profileDir, snapshot.catalog),
+      skins: await catalogWithStars(profileDir, snapshot.catalog),
       catalogSource: snapshot.source,
       catalogLastCheckedAt: snapshot.lastCheckedAt,
       ...(snapshot.error ? { catalogError: snapshot.error } : {}),
@@ -149,19 +171,23 @@ export function mountRoutes(host: SkinMarketHost, options: RouteOptions): () => 
     } }),
     host.webServer.register({ kind: 'exact', path: '/dsh-skin-market/state', handler: (request, response) => {
       if (!method(request, response, 'GET')) return
-      sendJson(response, 200, {
-        hostKind,
-        runtime: options.runtime,
-        skins: lifecycle.states(),
-        installedClientPlugins: installedClientPlugins(options.profileDir, lifecycle.catalog),
-        operation: lifecycle.currentOperation(),
-        operations: lifecycle.currentOperations(),
-        marketUpdateOperation: marketUpdater.currentOperation(),
-        instanceId,
-        restartAvailable: options.restart?.available === true,
-        marketUpdateRestartRequired: marketUpdater.restartRequired,
-        runningAgentCount: runningAgentCount(host),
-      })
+      try {
+        sendJson(response, 200, {
+          hostKind,
+          runtime: options.runtime,
+          skins: lifecycle.states(),
+          installedClientPlugins: installedClientPlugins(profileDir, lifecycle.catalog),
+          operation: lifecycle.currentOperation(),
+          operations: lifecycle.currentOperations(),
+          marketUpdateOperation: marketUpdater.currentOperation(),
+          instanceId,
+          restartAvailable: options.restart?.available === true,
+          marketUpdateRestartRequired: marketUpdater.restartRequired,
+          runningAgentCount: runningAgentCount(routeHost),
+        })
+      } catch (error) {
+        sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
+      }
     } }),
     host.webServer.register({ kind: 'exact', path: '/dsh-skin-market/market-update', handler: async (request, response) => {
       if (request.method !== 'GET' && request.method !== 'POST') {
@@ -246,7 +272,7 @@ export function mountRoutes(host: SkinMarketHost, options: RouteOptions): () => 
           if (!canRestartSkin(skinState)) return sendJson(response, 409, { error: '请先选择并使用此皮肤，再重新启动 DeepSeek Harness' })
         }
         assertRestartClearOfSkinOperations(lifecycle.currentOperations(), marketUpdater.currentOperation())
-        await waitForRestartSafety(host)
+        await waitForRestartSafety(routeHost)
         sendJson(response, 202, { restarting: true, instanceId })
         options.restart.schedule()
       } catch (error) {
@@ -255,7 +281,17 @@ export function mountRoutes(host: SkinMarketHost, options: RouteOptions): () => 
     } }),
   ]
   return () => {
-    lifecycle.dispose()
-    for (const dispose of disposers.reverse()) dispose()
+    // Newer lifecycle implementations may make disposal asynchronous so an
+    // in-flight official Desktop manager request can be cancelled and joined
+    // before its routes disappear. Keep the synchronous path synchronous for
+    // existing hosts and tests.
+    const finish = (): void => {
+      for (const dispose of disposers.reverse()) dispose()
+    }
+    const disposed = Promise.all([
+      Promise.resolve(lifecycle.dispose()),
+      marketUpdater.dispose?.() ?? Promise.resolve(),
+    ])
+    return disposed.then(finish)
   }
 }

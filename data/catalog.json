@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-26T22:00:00.776Z",
+  "generatedAt": "2026-09-29T05:36:18.425Z",
   "skins": [
     {
       "id": "carlown.majia7-skin",
@@ -1077,11 +1077,8 @@
         "version": "0.2.5",
         "commit": "140ed3c3133ecb31761845224f4ec91d45ba747e",
         "desktop": {
-          "mode": "managed",
-          "registry": "npm",
-          "packageName": "dsh-catppuccin",
-          "packageVersion": "0.2.1",
-          "integrity": "sha512-jHIB4oeHD07iIIl4kpbZ0n+5FzhGTzWd/jkbY9aWH5PILAostlFyt0NE4G+KDJsxG3kC/oiAUE8qM6j+Sx6LEQ=="
+          "mode": "manual-only",
+          "reason": "npm-source-unverified"
         }
       },
       "compatibility": {
@@ -1191,8 +1188,8 @@
           "mode": "managed",
           "registry": "npm",
           "packageName": "dsh-dream-skin",
-          "packageVersion": "0.4.14",
-          "integrity": "sha512-bSpksAe3ugJLwF3Op6EhBjQ5/rKIxVQWUyUBEgnBZ+ekSiI9fopFQe+EOIuvQKmwUcCuiS7GMKDQiweiUPH76Q=="
+          "packageVersion": "9.26.1",
+          "integrity": "sha512-Y34Am+Vcf1gWP2VJ3LHpPcGCvTjyPc11GeefpAIATVUspu+EhWlnFx0OjhifdfcyI2GcL5Z+EhVQQZyd5Xj3iA=="
         }
       },
       "compatibility": {
@@ -1764,8 +1761,8 @@
           "mode": "managed",
           "registry": "npm",
           "packageName": "dsh-neu-theme",
-          "packageVersion": "0.1.0",
-          "integrity": "sha512-ZH3xVtpDvw11zpN0RotrV0u6ODoEGbDwYw6QclCU7MFf/rx32eDOJoGUIYEPZ3ANWcIkAIMROjnRx2z8Z89kOA=="
+          "packageVersion": "0.1.2",
+          "integrity": "sha512-nkR0gAv/ez4LtXFwKDLvU8It6eGTRrqzdpaxAFqEhaP7GbriqaAmPF7bnZhlym+UWwuYNw3SRA/VJ/k2G3wkwQ=="
         }
       },
       "compatibility": {
@@ -1872,11 +1869,8 @@
         "version": "0.2.3",
         "commit": "4eb4458d9c98220383dfc588a61cddb08c36fe6f",
         "desktop": {
-          "mode": "managed",
-          "registry": "npm",
-          "packageName": "@yuquexianzhou/solarized-dsh-theme",
-          "packageVersion": "0.1.1",
-          "integrity": "sha512-9GdwEyUCUSmUqfOV/comS5pTj6ONJsvfhMwSKMUhm9ProNG//A9kWZb9KxZWfvdX9B5QX5tUhFWZyguULsrxNA=="
+          "mode": "manual-only",
+          "reason": "npm-source-unverified"
         }
       },
       "compatibility": {
@@ -2183,8 +2177,8 @@
           "mode": "managed",
           "registry": "npm",
           "packageName": "dsh-homepage-skin",
-          "packageVersion": "0.1.12",
-          "integrity": "sha512-Qjh7YEYlEM+zR+1QnX0Xim+i1h6i3dN3RQUDnbUXJuN5f6SXLrDkbuZAMhNOhheKq3Qb3+t4uXk7gPYCjM2tOw=="
+          "packageVersion": "0.1.13",
+          "integrity": "sha512-VCXbd8IlI/r1Yfs3B1u5G8q+kqgubZfW1ERgrn9Q61DiMG09eafH0vFTe1yglF99k69Ny0S8yGHRq7goz3IRVg=="
         }
       },
       "compatibility": {
@@ -2810,8 +2804,8 @@
           "mode": "managed",
           "registry": "npm",
           "packageName": "@pakiknowledge/dsh-client-ui-skin-claude",
-          "packageVersion": "0.2.0",
-          "integrity": "sha512-bqjyiIVGOpaEgo/tYSELSNLKNIq1QZ9KoIMdXRw5qfihSKAXzoLqs7iRU/wTc0kjMQuIdElOIbyvohBSG1OAIw=="
+          "packageVersion": "0.2.1",
+          "integrity": "sha512-EAsMW/XQ2TSqevzCdrF7M9e9DwmNMUqrEO/rqld9QLYizh2sJuEoV4nHqtviZTftsALNNL8aXj2cmN3/ppSyYg=="
         }
       },
       "compatibility": {
@@ -3653,11 +3647,8 @@
         "version": "0.1.12",
         "commit": "5c8a1e0a4bce3de76721e5698d5e105d09a74509",
         "desktop": {
-          "mode": "managed",
-          "registry": "npm",
-          "packageName": "dsh-ui-appearance",
-          "packageVersion": "0.1.5",
-          "integrity": "sha512-FxpfjB2Xv8klJvzKGv9nPv8Y+gq2NWCIw1bch6Rz2F1/zWSI+kCbonhapyomz/fqyki1S0EuLrvIyXNcfydsCQ=="
+          "mode": "manual-only",
+          "reason": "npm-source-unverified"
         },
         "allowBuild": "dsh-ui-appearance@https://codeload.github.com/TQSY114514/dsh-ui-appearance/tar.gz/5c8a1e0a4bce3de76721e5698d5e105d09a74509"
       },
@@ -8185,11 +8176,8 @@
         "version": "0.4.2",
         "commit": "c76b9217c2e6a0613870e2ce0727a960bb9defa2",
         "desktop": {
-          "mode": "managed",
-          "registry": "npm",
-          "packageName": "dsh-skin-alphacoders",
-          "packageVersion": "0.3.0",
-          "integrity": "sha512-MyKXm4lW0PJZRkXe83snVIvHEKB1AdVDxaiR9rF0vClyKXxcz42bhAEJQWrW4ELfkQKDJPwulMnV7rm21BaYMQ=="
+          "mode": "manual-only",
+          "reason": "npm-source-unverified"
         }
       },
       "compatibility": {
@@ -12638,8 +12626,8 @@
           "mode": "managed",
           "registry": "npm",
           "packageName": "@a9i5k4/dsh-anchored-monitor",
-          "packageVersion": "0.3.0",
-          "integrity": "sha512-YxwjBXGlDLIySpvgb0RtK17Via8H9lWsSjjc/fvilC5uFznQ9Fx4GQz385U55BoQBWWOouuNTPVeaLAXkxTwZw=="
+          "packageVersion": "0.3.1",
+          "integrity": "sha512-/EuT3gen4m3+lYKfjmGWgIU5ibYcmDR24TdiIJ5nCdSUTEfG6YM1gQMowppe4tsIVu4MuipgriAQqgnglaKvMw=="
         }
       },
       "compatibility": {
@@ -14752,8 +14740,8 @@
           "mode": "managed",
           "registry": "npm",
           "packageName": "dsh-dracula-theme",
-          "packageVersion": "1.0.0",
-          "integrity": "sha512-RI/LoRKTPmjko2UbmtWeq72lCy0+PEooMlWMDWOLmVyXaJXAQmVMB3dV3dnXlIQpsenHwkarnspUV3F/JgQh5w=="
+          "packageVersion": "1.1.0",
+          "integrity": "sha512-R2biqmAXf/reh7AvQPtX2ixx0gfqDAw+yoMAofpwdNAjmIRJZ8uZrQ3tQq9vpll5suiRRckemBP1ujJcVXA1aUw=="
         }
       },
       "compatibility": {
@@ -16176,11 +16164,8 @@
         "version": "0.1.5",
         "commit": "51d9f31f7dae3e119b610227b75bea9bd99f6ffa",
         "desktop": {
-          "mode": "managed",
-          "registry": "npm",
-          "packageName": "dsh-weniger-theme",
-          "packageVersion": "0.1.4",
-          "integrity": "sha512-B/l6zkB22NGYfLG0vPRLPdlNiK3bdH4BVRBye9NCMowDTGz/5OjETEBYtxGMDdUb7oo+HEbiUKxR7Tc+4T2Ydw=="
+          "mode": "manual-only",
+          "reason": "npm-source-unverified"
         }
       },
       "compatibility": {
@@ -23081,8 +23066,8 @@
           "mode": "managed",
           "registry": "npm",
           "packageName": "dsh-official-homepage-theme",
-          "packageVersion": "1.0.6",
-          "integrity": "sha512-1cR3E5fn6HSTitI7gVEfBOrx5cejxvWuRqAfqpKxMRQWVXajUlcIhmcOCjEljIt2ZMvDTdCBzpVj22Kx2N0YTw=="
+          "packageVersion": "1.0.7",
+          "integrity": "sha512-NNSnPIeK5HHG1ogholwmUEcqtQz/FdJ3CG1UWsRRNlRQbdghf29v1q7/RPb5jaZw8rUz6SLCngqX0zPR05Iolw=="
         }
       },
       "compatibility": {
@@ -23169,11 +23154,8 @@
         "version": "0.2.2",
         "commit": "72c6213c5e8a34be473722dcea9ec3f7f539b0ca",
         "desktop": {
-          "mode": "managed",
-          "registry": "npm",
-          "packageName": "dsh-animation-optimization",
-          "packageVersion": "0.2.0",
-          "integrity": "sha512-H07fWhLXmLuygSWBr5v5rYCOKMuLpoCH6LA3P9+Reh5VGsv20rizJCkgecNjyGsjFcN2647RsC9Nza2mxcNgAg=="
+          "mode": "manual-only",
+          "reason": "npm-source-unverified"
         }
       },
       "compatibility": {
@@ -24940,8 +24922,8 @@
           "mode": "managed",
           "registry": "npm",
           "packageName": "@ch4acko3/dsh-code-render",
-          "packageVersion": "0.1.2",
-          "integrity": "sha512-8L+uvH3bVKPMbFU+Y/f7Z8WGen3sw3BuplT9iDlwokZFjP1U0ryXSwkkkWbmQXUe/BY6iRl5Jh6TgYzOJ4dF6w=="
+          "packageVersion": "0.1.3",
+          "integrity": "sha512-aTMlRcu0VTJPekXudoas77XXLmdSMEZpOazVSerW3+h/NQrh8BclqJOkztkkRSJ7TyQREC1Y6MueQgLKAGMNfQ=="
         }
       },
       "compatibility": {
@@ -25045,8 +25027,8 @@
           "mode": "managed",
           "registry": "npm",
           "packageName": "dsh-cool-theme",
-          "packageVersion": "0.4.0",
-          "integrity": "sha512-LP7QneJrdTw+UjnDNwC1/lzPd8vV64R7nN87f72BNiy3dfdwlo3pRbep9oY9Fuki+Eh6RINVxSRZDJys8SArCQ=="
+          "packageVersion": "0.6.1",
+          "integrity": "sha512-ec4yWlo2yrnsE3jtiryReF6t8upIobhtvYU6W/mhCiYafNFngVO4iSkrA2z2ts0L839KRuoM82r/MNZCIblwyg=="
         }
       },
       "compatibility": {
@@ -28752,11 +28734,8 @@
         "version": "0.7.0",
         "commit": "e8a2134256f4217a37fbfe3ab241de0334c071a7",
         "desktop": {
-          "mode": "managed",
-          "registry": "npm",
-          "packageName": "ds-hentai",
-          "packageVersion": "0.6.0",
-          "integrity": "sha512-oVtowukG2fMzoYzdZaeJnXlwP2+C4hkyIxNmtLyBvRRlr/CsmQTJPZ2WsEDD47uZWqqpPJaSjtoJVC+J7LOtiA=="
+          "mode": "manual-only",
+          "reason": "npm-source-unverified"
         }
       },
       "compatibility": {
@@ -28853,8 +28832,8 @@
           "mode": "managed",
           "registry": "npm",
           "packageName": "dsh-glass-ui-theme",
-          "packageVersion": "0.2.5",
-          "integrity": "sha512-0v+vyMLCxiso9CRNwzjZnOzKFcQ8+XFiWv4VkcBKmssRbJhbNlixa1ex0gmboWbIQsazDbBeTruYgPSqr/xZTQ=="
+          "packageVersion": "0.2.6",
+          "integrity": "sha512-i2yQELyMJxrvoR4tKqAx+LJxEwUJNXOmNYdy8D8O8GFxwNpNuCvEH0P9zFcJqKWH0lQTRytOSnU4Q5WMfU5KSg=="
         }
       },
       "compatibility": {

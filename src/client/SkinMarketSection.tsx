@@ -8,6 +8,7 @@ import {
   Input,
   Modal,
   Pill,
+  writeClipboard,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import css from './SkinMarket.module.css'
 import './media-hover.module.css'
@@ -16,7 +17,7 @@ import { generatedMediaFor, generatedMediaManifestUrl, generatedMediaUrl, parseG
 import { useLazyMedia } from '../media-visibility.ts'
 import { browserCatalogCache, type CatalogCache } from './catalog-cache.ts'
 import { interceptNotice, isInterceptFailure, marketUpdateNotice } from './failure-help.ts'
-import { CLI_INSTALL_WARNING, createSkinInstallCommand, createSkinInstallPrompt, createSubmissionPrompt, REGISTRY_REPOSITORY } from './submission.ts'
+import { CLI_INSTALL_WARNING, createSkinInstallCommand, createSkinInstallPrompt, createSkinInstallSearchKeyword, createSubmissionPrompt, REGISTRY_REPOSITORY } from './submission.ts'
 import { switchClientSkin, type ClientSkinRuntime } from './index.ts'
 import { displayTitle, githubRepoLabel } from '../display-title.ts'
 import { assessCompatibility, type CompatibilityAssessment } from '../compatibility.ts'
@@ -95,6 +96,7 @@ export function restoreListScroll(list: HTMLElement | null, anchor: ListScrollAn
 interface MarketStateResponse {
   hostKind?: MarketHostKind
   runtime?: DshRuntime
+  restartAvailable?: boolean
   skins: RuntimeSkin[]
   operation?: Operation | null
   operations?: Operation[]
@@ -222,6 +224,16 @@ function recoveryActionLabel(action: 'retry' | 'approve-build' | undefined): str
   if (action === 'approve-build') return '批准构建并重试'
   if (action === 'retry') return '重试'
   return undefined
+}
+
+function desktopManualReasonLabel(reason: string | undefined): string {
+  if (reason === undefined) return '未提供可用的 Desktop 安装包'
+  return {
+    'npm-package-not-found': '未找到可供 Desktop 安装的 npm 包',
+    'npm-repository-mismatch': 'npm 包仓库与固定版本不一致',
+    'npm-source-unverified': 'npm 来源未核验',
+    'npm-version-mismatch': 'npm 包版本与固定版本不一致',
+  }[reason] ?? reason
 }
 
 const mutationLabels: Record<MutationKind, string> = {
@@ -380,10 +392,22 @@ async function json<T>(url: string, init?: RequestInit): Promise<T> {
   } catch {
     throw new Error(response.ok
       ? '皮肤市场服务未返回有效数据，请确认 Host 插件已经更新'
-      : `皮肤市场请求失败（HTTP ${response.status}）`)
+      : `皮肤市场请求失败（${url}，HTTP ${response.status}）`)
   }
   if (!response.ok) throw new Error(body.error ?? `HTTP ${response.status}`)
   return body
+}
+
+async function copyTextToClipboard(text: string): Promise<void> {
+  if (typeof writeClipboard === 'function' && await writeClipboard(text)) return
+  // Keep older DSH primitive hosts usable if they predate writeClipboard.
+  if (navigator.clipboard?.writeText !== undefined) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return
+    } catch { /* report the same clear error below */ }
+  }
+  throw new Error('当前页面没有可用的剪贴板权限')
 }
 
 function runtimeFor(states: RuntimeSkin[], id: string): RuntimeSkin {
@@ -539,6 +563,7 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
   const [states, setStates] = useState<RuntimeSkin[]>([])
   const [hostKind, setHostKind] = useState<MarketHostKind>('dsh')
   const [runtime, setRuntime] = useState<DshRuntime | null>(null)
+  const [restartAvailable, setRestartAvailable] = useState(true)
   const [installedClientPlugins, setInstalledClientPlugins] = useState<InstalledClientPlugin[]>([])
   const [loading, setLoading] = useState(true)
   const [catalogLoading, setCatalogLoading] = useState(true)
@@ -630,6 +655,7 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
     setStates(state.skins)
     setHostKind(state.hostKind ?? 'dsh')
     setRuntime(state.runtime ?? null)
+    setRestartAvailable(state.restartAvailable !== false)
     setOperations(current => {
       const incoming = (state.operations ?? (state.operation == null ? [] : [state.operation])).filter(isLiveOperation)
       const failed = current.filter(operation => operation.phase === 'failed' && !incoming.some(item => item.skinId === operation.skinId))
@@ -653,10 +679,14 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
       // Updating the market package can cause DSH to remount this client
       // entry. Keep the restart prompt recoverable from Host state instead
       // of relying on the previous React tree's local state.
-      setRestartTarget({ kind: 'market-update' })
+      const target = { kind: 'market-update' as const }
+      setRestartTarget(target)
       setRestartCheckFinished(true)
       setCompatibilityWarning(null)
-      setConfirmRestart(true)
+      if (state.restartAvailable === false) {
+        setPendingRestart({ target, title: '皮肤市场已更新，请从官方 Desktop 重启应用后生效', startedAt: new Date().toISOString() })
+        setConfirmRestart(false)
+      } else setConfirmRestart(true)
     }
     if (skinsRef.current.length > 0) {
       setSelectedId(value => {
@@ -708,6 +738,10 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
   }, [acceptCatalog, applyMarketState, catalogCache, finishInstalledLoading])
 
   const openRestartConfirm = useCallback(async (skinId?: string, kind: RestartTarget['kind'] = 'skin', advisory: CompatibilityAssessment | null = null) => {
+    if (hostKind === 'desktop' && !restartAvailable) {
+      setError('请从官方 Desktop 重启应用后生效')
+      return
+    }
     setError(null)
     setRunningAgents(null)
     setRestartCheckFinished(false)
@@ -722,7 +756,7 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
       setRestartCheckFinished(true)
       setError(reason instanceof Error ? reason.message : String(reason))
     }
-  }, [])
+  }, [hostKind, restartAvailable])
 
   const waitForMarketUpdate = useCallback(async (operationId: string) => {
     if (marketUpdatePolls.current.has(operationId)) return
@@ -885,14 +919,13 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
     ? selected.install.desktop.reason
     : undefined
   const manualInstallNotice = hostKind === 'desktop'
-    ? desktopManualReason === undefined
-      ? 'Desktop 当前仅支持已验证 npm 精确版本的一键安装；此皮肤请按仓库说明手动安装。'
-      : `Desktop 暂不支持一键安装：${desktopManualReason}。请按仓库说明手动安装。`
-    : '该皮肤暂不支持市场直接安装，请复制提示词交给 Agent 处理。'
+    ? `无法自动安装：${desktopManualReasonLabel(desktopManualReason)}。`
+    : '该皮肤暂不支持市场直接安装。'
   const manualHealthNotice = hostKind === 'desktop'
     ? manualInstallNotice
     : '该仓库距离市场的一键安装规范还差少量信息；可参考右侧仓库健康建议完善，当前请按维护者说明安装。'
   const autoInstallable = !manualOnly
+  const manualInstallKeyword = selected === undefined ? '' : createSkinInstallSearchKeyword(selected)
   const filtered = useMemo(() => skins.filter(skin => {
     if (!matchesCatalogSearch(skin, query)) return false
     if (filter === 'installed') return runtimeFor(states, skin.id).installation !== 'missing'
@@ -989,8 +1022,7 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
       const response = await fetch(`/dsh-skin-market/logs?operationId=${encodeURIComponent(operationId)}`, { cache: 'no-store' })
       if (!response.ok) throw new Error(`日志导出失败（HTTP ${response.status}）`)
       const text = await response.text()
-      if (!navigator.clipboard?.writeText) throw new Error('当前页面没有可用的剪贴板权限')
-      await navigator.clipboard.writeText(text)
+      await copyTextToClipboard(text)
       setCopiedLogId(operationId)
       window.setTimeout(() => setCopiedLogId(current => current === operationId ? null : current), 2400)
     } catch (reason) {
@@ -1185,6 +1217,10 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
   }, [activateSkin, runForSkin])
 
   const restartNow = useCallback(async () => {
+    if (hostKind === 'desktop' && !restartAvailable) {
+      setError('请从官方 Desktop 重启应用后生效')
+      return
+    }
     const target = restartTarget ?? { kind: 'skin' as const, skinId: selectedIdRef.current }
     if (target.kind === 'skin' && target.skinId === '') return
     setRestarting(true)
@@ -1209,7 +1245,7 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
     } finally {
       setRestarting(false)
     }
-  }, [restartTarget])
+  }, [hostKind, restartAvailable, restartTarget])
 
   const chooseSkin = (id: string) => { userSelectedRef.current = true; selectedIdRef.current = id; setSelectedId(id); setShotIndex(0); setLightboxOpen(false); setError(null); setInstallCopied(null); setShowInstallOptions(false) }
   const select = (id: string) => { chooseSkin(id); setShowDetail(true) }
@@ -1246,12 +1282,17 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
   const recommendations = selected?.recommendations.map(id => skins.find(skin => skin.id === id)).filter((skin): skin is CatalogSkin => skin !== undefined) ?? []
   const submissionPrompt = createSubmissionPrompt()
   const copySubmissionPrompt = async () => {
-    await navigator.clipboard.writeText(submissionPrompt)
+    await copyTextToClipboard(submissionPrompt)
     setSubmissionCopied(true)
   }
-  const copyInstallOption = async (method: 'prompt' | 'command') => {
+  const copyInstallOption = async (method: 'prompt' | 'command' | 'keyword') => {
     if (selected === undefined) return
-    await navigator.clipboard.writeText(method === 'prompt' ? createSkinInstallPrompt(selected) : createSkinInstallCommand(selected))
+    const content = method === 'prompt'
+      ? createSkinInstallPrompt(selected)
+      : method === 'command'
+        ? createSkinInstallCommand(selected)
+        : createSkinInstallSearchKeyword(selected)
+    await copyTextToClipboard(content)
     setInstallCopied(`${selected.id}:${method}`)
   }
   const renderHomeCard = (skin: CatalogSkin, location: 'installed' | 'discover') => {
@@ -1384,7 +1425,9 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
     startedAt={pendingRestart.startedAt}
     metadata={[]}
     terminal
-    action={<Button variant="outline" size="sm" onClick={() => void openRestartConfirm(pendingRestart.target.kind === 'skin' ? pendingRestart.target.skinId : undefined, pendingRestart.target.kind)}>重启</Button>}
+    action={restartAvailable
+      ? <Button variant="outline" size="sm" onClick={() => void openRestartConfirm(pendingRestart.target.kind === 'skin' ? pendingRestart.target.skinId : undefined, pendingRestart.target.kind)}>重启</Button>
+      : <span className={css.repoMeta}>请从官方 Desktop 重启应用</span>}
     onDismiss={() => setPendingRestart(null)}
   />
   const marketUpdateActive = marketOperation !== null && !['done', 'failed', 'cancelled'].includes(marketOperation.phase)
@@ -1520,11 +1563,13 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
                 {autoInstallable && !deferInstallAndUse && <Button variant="primary" size="sm" icon={<IconDownloadOutline />} disabled={selectedBusy !== undefined} onClick={() => void installAndActivate()}>安装并使用</Button>}
                 {autoInstallable && <Button variant={deferInstallAndUse ? 'primary' : 'outline'} size="sm" icon={deferInstallAndUse ? <IconDownloadOutline /> : undefined} disabled={selectedBusy !== undefined} title={deferInstallAndUse ? '先安装，当前有其他皮肤正在安装，完成后再使用' : undefined} onClick={() => void run('install')}>{deferInstallAndUse ? '安装' : '仅安装'}</Button>}
                 {autoInstallable && <Button variant="outline" size="sm" disabled={selectedBusy !== undefined} onClick={() => { setInstallCopied(null); setShowInstallOptions(true) }}>其他安装方式</Button>}
-                {manualOnly && <Button variant="outline" size="sm" icon={<MarkGithubIcon size={16} />} disabled={selectedBusy !== undefined} title="前往 GitHub 查看维护者提供的手动安装方式" onClick={() => window.open(selected.repo, '_blank', 'noopener,noreferrer')}>查看安装说明</Button>}
+                {manualOnly && <Button variant="outline" size="sm" icon={<MarkGithubIcon size={16} />} disabled={selectedBusy !== undefined} title="打开手动安装面板" onClick={() => { setInstallCopied(null); setShowInstallOptions(true) }}>查看安装说明</Button>}
               </>}
               {state.installation === 'installed' && state.activation === 'inactive' && <Button variant="primary" size="sm" disabled={selectedBusy !== undefined} onClick={activateSelected}>使用</Button>}
               {state.installation === 'installed' && state.activation === 'inactive' && <Button className={css.pinAction} variant="outline" size="sm" aria-pressed="false" title="在不替换当前主皮肤的情况下启用并常驻，适合宠物、音效等可叠加插件；多个皮肤可能发生冲突" disabled={selectedBusy !== undefined} onClick={() => setConfirmPin(true)}>常驻使用</Button>}
-              {state.activation === 'restart-required' && <Button variant="primary" size="sm" disabled={selectedBusy !== undefined} title={restartInstallBlock ?? undefined} onClick={() => void openRestartConfirm()}>重启以应用</Button>}
+              {state.activation === 'restart-required' && (restartAvailable
+                ? <Button variant="primary" size="sm" disabled={selectedBusy !== undefined} title={restartInstallBlock ?? undefined} onClick={() => void openRestartConfirm()}>重启以应用</Button>
+                : <span className={css.repoMeta}>请从官方 Desktop 重启应用后生效</span>)}
               {state.activation === 'active' && <Button variant="outline" size="sm" disabled={selectedBusy !== undefined} onClick={() => void run('deactivate')}>停用</Button>}
               {state.activation === 'active' && <Button className={css.pinAction} variant="outline" size="sm" aria-pressed={state.pinned === true} title={state.pinned ? '取消后，如果它不是当前主皮肤，将立即停用；以后切换皮肤时也不会再保留' : '切换其他皮肤时仍保持启用，适合宠物、音效等可叠加插件；多个皮肤可能发生冲突'} disabled={selectedBusy !== undefined} onClick={() => state.pinned ? void run('unpin') : setConfirmPin(true)}>{state.pinned ? '取消常驻' : '常驻使用'}</Button>}
               {state.activation === 'restart-required' && state.pinned && <Button className={css.pinAction} variant="outline" size="sm" aria-pressed="true" title="取消常驻并撤销待重启的启用状态" disabled={selectedBusy !== undefined} onClick={() => void run('unpin')}>取消常驻</Button>}
@@ -1642,12 +1687,19 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
         onClose={() => setShowInstallOptions(false)}
         title={`安装 ${selected?.name.zh ?? '皮肤'}`}
         closeLabel="关闭"
-        description={manualOnly ? '需要按仓库说明完成安装。' : '任选一种，不用都执行。'}
-        footer={manualOnly ? <><Button variant="outline" size="sm" onClick={() => setShowInstallOptions(false)}>取消</Button><Button variant="primary" size="sm" onClick={() => void copyInstallOption('prompt')}>{installCopied === `${selected?.id}:prompt` ? '提示词已复制' : '复制提示词'}</Button></> : <Button variant="outline" size="sm" onClick={() => setShowInstallOptions(false)}>关闭</Button>}
+        description={manualOnly ? manualInstallNotice : '任选一种，不用都执行。'}
+        footer={manualOnly ? undefined : <Button variant="outline" size="sm" onClick={() => setShowInstallOptions(false)}>关闭</Button>}
       >
         <div className={css.installOptions}>
-          <div><strong>提示词</strong><span className={css.copyCapsule}><code title={selected === undefined ? '' : createSkinInstallPrompt(selected)}>{selected === undefined ? '' : createSkinInstallPrompt(selected)}</code><Button className={css.copyCapsuleButton} variant="outline" size="sm" icon={<IconCopyOutline />} aria-label={installCopied === `${selected?.id}:prompt` ? '提示词已复制' : '复制提示词'} title="复制提示词" onClick={() => void copyInstallOption('prompt')} /></span></div>
-          {manualOnly && <div className={css.manualInstallGuide}><strong>按仓库说明完成安装</strong><p>市场不提供这款皮肤的一键安装命令。复制提示词，让 Agent 先检查仓库，再按维护者说明完成安装。</p>{selected !== undefined && <a href={selected.repo} target="_blank" rel="noreferrer"><MarkGithubIcon size={15} aria-hidden="true" />打开 GitHub 仓库</a>}</div>}
+          <div><strong>{manualOnly ? '方式一：复制提示词' : '提示词'}</strong><span className={css.copyCapsule}><code title={selected === undefined ? '' : createSkinInstallPrompt(selected)}>{selected === undefined ? '' : createSkinInstallPrompt(selected)}</code><Button className={css.copyCapsuleButton} variant="outline" size="sm" icon={<IconCopyOutline />} aria-label={installCopied === `${selected?.id}:prompt` ? '提示词已复制' : '复制提示词'} title="复制提示词" onClick={() => void copyInstallOption('prompt')} /></span></div>
+          {manualOnly && selected !== undefined && <div className={css.manualInstallGuide}>
+            <strong>方式二：在插件页手动安装</strong>
+            <p>插件 → 添加插件，输入：</p>
+            <span className={css.copyCapsule}>
+              <Input className={css.copyCapsuleInput} readOnly value={manualInstallKeyword} aria-label="插件页安装目标" />
+              <Button className={css.copyCapsuleButton} variant="ghost" size="sm" icon={<IconCopyOutline />} aria-label={installCopied === `${selected.id}:keyword` ? '插件页安装目标已复制' : '复制插件页安装目标'} title="复制插件页安装目标" onClick={() => void copyInstallOption('keyword')} />
+            </span>
+          </div>}
           {!manualOnly && <div><strong>命令</strong><span className={css.copyCapsule}><code title={selected === undefined ? '' : createSkinInstallCommand(selected)}>{selected === undefined ? '' : createSkinInstallCommand(selected)}</code><Button className={css.copyCapsuleButton} variant="outline" size="sm" icon={<IconCopyOutline />} aria-label={installCopied === `${selected?.id}:command` ? '命令已复制' : '复制命令'} title="复制命令" onClick={() => void copyInstallOption('command')} /></span><small>{CLI_INSTALL_WARNING}</small></div>}
         </div>
       </Modal>

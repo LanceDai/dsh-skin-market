@@ -78,4 +78,15 @@ export function createSkinInstallCommand(skin: CatalogSkin): string {
     '# 官方桌面版：不要在终端执行；在「设置 → 皮肤市场」中打开该皮肤并安装',
   ].join('\n')
 }
+
+/**
+ * The exact spec users can paste into the official Desktop plugin page.
+ *
+ * Desktop accepts both npm and Git specs. A manual-only monorepo entry often
+ * has no published npm package, so its package name would just fail the same
+ * lookup that caused the manual fallback in the first place.
+ */
+export function createSkinInstallSearchKeyword(skin: CatalogSkin): string {
+  return preferredInstallTarget(skin)
+}
 import type { CatalogSkin } from './types.ts'

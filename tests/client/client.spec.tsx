@@ -38,13 +38,18 @@ vi.mock('@deepseek-ai/dsh-client-ui-primitives', () => {
     IconRefreshOutline16: icon, IconSearchOutline16: icon, IconTrashOutline16: icon,
     IconChevronLeftOutlineRegular: icon, IconChevronDownOutlineRegular: icon, IconCopyOutlineRegular: icon, IconDownloadOutlineRegular: icon, IconLoadingOutlineRegular: icon,
     IconRefreshOutlineRegular: icon, IconSearchOutlineRegular: icon, IconTrashOutlineRegular: icon,
+    writeClipboard: async (text: string) => {
+      if (navigator.clipboard?.writeText === undefined) return false
+      await navigator.clipboard.writeText(text)
+      return true
+    },
   }
 })
 
 import { CATALOG_BATCH_SIZE, captureListScroll, compareInstalledSkinOrder, compareSkinOrder, interceptNotice, isInterceptFailure, resolvePrimitiveIcon, restartDocumentProbeUrl, restartReloadUrl, restoreListScroll, restoreMarketStyleOrder, SkinMarketSection, waitForRestartDocument } from '../../src/client/SkinMarketSection.tsx'
 import { MARKET_INSTALL_TROUBLESHOOT_URL, MARKET_MANUAL_UPDATE_URL } from '../../src/client/failure-help.ts'
 import { createClientSkinRuntime, missingPrimitives, switchClientSkin } from '../../src/client/index.ts'
-import { createSkinInstallCommand, createSkinInstallPrompt } from '../../src/client/submission.ts'
+import { createSkinInstallCommand, createSkinInstallPrompt, createSkinInstallSearchKeyword } from '../../src/client/submission.ts'
 import { setGeneratedMediaSources } from '../../src/media-preview.ts'
 import type { CatalogSkin } from '../../src/client/types.ts'
 
@@ -710,21 +715,56 @@ describe('client market', () => {
     expect(screen.queryByRole('dialog', { name: '已拦截安装' })).toBeNull()
   })
 
-  it('opens a prompt-only install dialog for manual cards', async () => {
+  it('opens a concise manual install dialog with prompt and plugin keyword methods', async () => {
     const manual = { ...skin, review: { compatibility: 'verified' as const, preview: 'verified' as const, installation: 'manual-only' as const } }
     const writeText = vi.fn(async () => undefined)
+    const open = vi.fn()
     Object.assign(navigator, { clipboard: { writeText } })
+    vi.stubGlobal('open', open)
     vi.stubGlobal('fetch', vi.fn(async (url: string) => ({ ok: true, json: async () => url.endsWith('/catalog') ? { skins: [manual] } : { skins: [] } })))
     render(<SkinMarketSection t={key => key} />)
 
     fireEvent.click(await screen.findByRole('button', { name: '需手动安装' }))
     const dialog = screen.getByRole('dialog', { name: '安装 测试皮肤' })
-    expect(dialog.textContent).toContain('按仓库说明完成安装')
+    expect(dialog.textContent).toContain('方式一：复制提示词')
+    expect(dialog.textContent).toContain('方式二：在插件页手动安装')
+    expect(dialog.textContent).toContain('插件 → 添加插件，输入：')
     expect(dialog.textContent).not.toContain('该皮肤需要 Agent 协助安装')
     expect(screen.queryByRole('button', { name: '复制命令' })).toBeNull()
+    expect(screen.getAllByRole('button', { name: '复制提示词' })).toHaveLength(1)
+    expect(screen.queryByRole('button', { name: '取消' })).toBeNull()
+    expect(screen.getByRole('textbox', { name: '插件页安装目标' })).toHaveProperty('value', createSkinInstallSearchKeyword(manual))
+    expect(screen.queryByRole('button', { name: '打开安装页面' })).toBeNull()
+    expect(open).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: '复制插件页安装目标' }))
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(createSkinInstallSearchKeyword(manual)))
     const copyPrompt = screen.getAllByRole('button', { name: '复制提示词' }).at(-1)!
     fireEvent.click(copyPrompt)
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(createSkinInstallPrompt(manual)))
+  })
+
+  it('explains the Desktop manual-only reason before offering the plugin keyword', async () => {
+    const manual = {
+      ...skin,
+      install: { ...skin.install, desktop: { mode: 'manual-only' as const, reason: 'npm-package-not-found' } },
+      review: { compatibility: 'verified' as const, preview: 'verified' as const, installation: 'manual-only' as const },
+    }
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => url.endsWith('/catalog')
+        ? { skins: [manual] }
+        : { hostKind: 'desktop', skins: [] },
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+    render(<SkinMarketSection t={key => key} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: '需手动安装' }))
+    const dialog = screen.getByRole('dialog', { name: '安装 测试皮肤' })
+    await waitFor(() => expect(dialog.textContent).toContain('无法自动安装：未找到可供 Desktop 安装的 npm 包'))
+    expect(dialog.textContent).toContain('方式二：在插件页手动安装')
+    expect(dialog.textContent).toContain('插件 → 添加插件，输入：')
+    expect(dialog.textContent).not.toContain('手动安装路径')
+    expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/install'))).toBe(false)
   })
 
   it('keeps installed skins in discovery and exposes Use and Update on both cards', async () => {
@@ -967,6 +1007,50 @@ describe('client market', () => {
     expect(await screen.findByText('Agent 状态检查已通过。但重启仍会关闭所有会话连接；即使回复已经停止显示，也请确认重要内容已保存，且没有即将开始的新任务。')).toBeTruthy()
     expect(screen.getByRole('button', { name: '确认无任务，立即重启' })).toBeTruthy()
     expect(screen.getByRole('button', { name: '稍后' })).toBeTruthy()
+  })
+
+  it('shows the official Desktop restart instruction without posting to the market restart route', async () => {
+    const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => ({
+      ok: true,
+      json: async () => url.endsWith('/catalog')
+        ? { skins: [skin] }
+        : {
+          hostKind: 'desktop',
+          restartAvailable: false,
+          runningAgentCount: 0,
+          skins: [{ skinId: skin.id, installation: 'installed', activation: 'restart-required', installedVersion: '1.0.0', updateAvailable: false }],
+        },
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+    render(<SkinMarketSection t={key => key} />)
+    await openSkinCard()
+
+    expect(await screen.findByText('请从官方 Desktop 重启应用后生效')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '重启以应用' })).toBeNull()
+    expect(fetchMock.mock.calls.some(([url, init]) => url.endsWith('/restart') && init?.method === 'POST')).toBe(false)
+  })
+
+  it('keeps the official Desktop self-update flow host-managed after the package is written', async () => {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => ({
+      ok: true,
+      json: async () => url.endsWith('/catalog')
+        ? { skins: [skin] }
+        : url.endsWith('/state')
+          ? { hostKind: 'desktop', restartAvailable: false, runningAgentCount: 0, skins: [] }
+          : url.endsWith('/market-update') && init?.method === 'POST'
+            ? { currentVersion: '0.1.57', latestVersion: '0.1.57', updateAvailable: false }
+            : url.endsWith('/market-update')
+              ? { currentVersion: '0.1.56', latestVersion: '0.1.57', updateAvailable: true }
+              : {},
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+    render(<SkinMarketSection t={key => key} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: '更新皮肤市场到 0.1.57' }))
+    expect(await screen.findByText('请从官方 Desktop 重启应用后生效')).toBeTruthy()
+    expect(await screen.findByText('皮肤市场已更新，待重启生效')).toBeTruthy()
+    expect(screen.queryByRole('dialog', { name: '需要重启 DSH 应用皮肤市场更新' })).toBeNull()
+    expect(fetchMock.mock.calls.some(([url, request]) => url.endsWith('/restart') && request?.method === 'POST')).toBe(false)
   })
 
   it('asks for restart after updating the active skin', async () => {
@@ -1623,8 +1707,10 @@ describe('client market', () => {
     render(<SkinMarketSection t={key => key} />)
 
     await openSkinCard()
-    fireEvent.click(await screen.findByTitle('前往 GitHub 查看维护者提供的手动安装方式'))
-    expect(open).toHaveBeenCalledWith(manual.repo, '_blank', 'noopener,noreferrer')
+    fireEvent.click(await screen.findByTitle('打开手动安装面板'))
+    expect(screen.getByRole('dialog', { name: '安装 测试皮肤' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '打开安装页面' })).toBeNull()
+    expect(open).not.toHaveBeenCalled()
     expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/install'))).toBe(false)
     expect(screen.getByText('该仓库距离市场的一键安装规范还差少量信息；可参考右侧仓库健康建议完善，当前请按维护者说明安装。')).toBeTruthy()
   })

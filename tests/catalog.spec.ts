@@ -35,6 +35,26 @@ describe('catalog', () => {
     expect(tide?.install.desktop).toEqual({ mode: 'manual-only', reason: 'companion-not-desktop-installable' })
   })
 
+  it('keeps managed Desktop metadata tied to the reviewed package release', () => {
+    const catalog = loadCatalog()
+    for (const skin of catalog.skins) {
+      if (skin.install.desktop?.mode !== 'managed') continue
+      expect(skin.install.desktop.packageName).toBe(skin.package)
+      expect(skin.install.desktop.packageVersion).toBe(skin.install.version)
+    }
+
+    const invalid = structuredClone(catalog)
+    const managed = invalid.skins.find(skin => skin.install.desktop?.mode === 'managed')!
+    const desktop = managed.install.desktop!
+    if (desktop.mode !== 'managed') throw new Error('expected a managed Desktop skin')
+    desktop.packageName = 'wrong-package'
+    expect(() => validateCatalog(invalid)).toThrow('invalid Desktop package name')
+
+    desktop.packageName = managed.package
+    desktop.packageVersion = '0.0.0'
+    expect(() => validateCatalog(invalid)).toThrow('invalid Desktop package version')
+  })
+
   it('keeps the Chinese homepage description for dsh-ads', () => {
     const skin = loadCatalog().skins.find(item => item.id === 'nagi-ovo.dsh-ads')
     expect(skin?.description).toMatch(/[\u3400-\u9fff]/)

@@ -105,6 +105,135 @@ describe('market routes', () => {
     dispose()
   })
 
+  it('waits for the market updater before unregistering routes', async () => {
+    const disposers: Array<() => void> = []
+    const webServer: WebServerService = {
+      register() {
+        const dispose = () => { disposers.push(dispose) }
+        return dispose
+      },
+    }
+    let resolveUpdater!: () => void
+    let updaterDisposed = false
+    const updater = {
+      restartRequired: false,
+      status: async () => ({ currentVersion: '0.1.57', latestVersion: '0.1.57', updateAvailable: false }),
+      update: async () => ({ currentVersion: '0.1.57', latestVersion: '0.1.57', updateAvailable: false }),
+      startUpdate: () => { throw new Error('not used') },
+      operation: () => null,
+      currentOperation: () => null,
+      cancel: () => { throw new Error('not used') },
+      retry: () => { throw new Error('not used') },
+      dispose: async () => {
+        await new Promise<void>(resolve => { resolveUpdater = resolve })
+        updaterDisposed = true
+      },
+    }
+    const disposeRoutes = mountRoutes({
+      webServer,
+      agents: { list: () => [] },
+      loader: { entries: (): Iterable<LoaderEntry> => [] },
+    }, {
+      profile: 'test',
+      profileDir: '/tmp/dsh-skin-market-route-updater-dispose',
+      runner: async () => ({ exitCode: 0, stdout: '', stderr: '', timedOut: false }),
+      marketUpdater: updater,
+    })
+
+    const disposing = disposeRoutes()
+    expect(updaterDisposed).toBe(false)
+    expect(disposers).toHaveLength(0)
+    resolveUpdater()
+    await disposing
+    expect(updaterDisposed).toBe(true)
+    expect(disposers.length).toBeGreaterThan(0)
+  })
+
+  it('returns a JSON diagnostic when Host state assembly throws', async () => {
+    const handlers = new Map<string, (request: IncomingMessage, response: ServerResponse) => void | Promise<void>>()
+    const webServer: WebServerService = {
+      register(route) {
+        handlers.set(route.path, route.handler)
+        return () => undefined
+      },
+    }
+    const marketUpdater = {
+      restartRequired: false,
+      status: async () => ({ currentVersion: '0.1.57', latestVersion: '0.1.57', updateAvailable: false }),
+      update: async () => ({ currentVersion: '0.1.57', latestVersion: '0.1.57', updateAvailable: false }),
+      startUpdate: () => { throw new Error('not used') },
+      operation: () => null,
+      currentOperation: () => { throw new Error('state probe failed') },
+      cancel: () => { throw new Error('not used') },
+      retry: () => { throw new Error('not used') },
+    }
+    const dispose = mountRoutes({
+      webServer,
+      agents: { list: () => [] },
+      loader: { entries: (): Iterable<LoaderEntry> => [] },
+    }, {
+      profile: 'test',
+      profileDir: '/tmp/dsh-skin-market-route-state-error',
+      runner: async () => ({ exitCode: 0, stdout: '', stderr: '', timedOut: false }),
+      marketUpdater,
+    })
+
+    let status = 0
+    let body = ''
+    const response = {
+      writeHead: (value: number) => { status = value },
+      end: (value: string) => { body = value },
+    } as unknown as ServerResponse
+    await handlers.get('/dsh-skin-market/state')?.({ method: 'GET', headers: {} } as IncomingMessage, response)
+    expect(status).toBe(500)
+    expect(JSON.parse(body)).toEqual({ error: 'state probe failed' })
+    await dispose()
+  })
+
+  it('shadows an unavailable lazy Agent service for official Desktop state', async () => {
+    const handlers = new Map<string, (request: IncomingMessage, response: ServerResponse) => void | Promise<void>>()
+    const webServer: WebServerService = {
+      register(route) {
+        handlers.set(route.path, route.handler)
+        return () => undefined
+      },
+    }
+    const host = Object.create({
+      get agents(): never { throw new Error('cannot get property "agents" without inject') },
+    }) as { webServer: WebServerService; loader: { entries(): Iterable<LoaderEntry> } }
+    host.webServer = webServer
+    host.loader = { entries: (): Iterable<LoaderEntry> => [] }
+    const marketUpdater = {
+      restartRequired: false,
+      status: async () => ({ currentVersion: '0.1.57', latestVersion: '0.1.57', updateAvailable: false }),
+      update: async () => ({ currentVersion: '0.1.57', latestVersion: '0.1.57', updateAvailable: false }),
+      startUpdate: () => { throw new Error('not used') },
+      operation: () => null,
+      currentOperation: () => null,
+      cancel: () => { throw new Error('not used') },
+      retry: () => { throw new Error('not used') },
+    }
+    const dispose = mountRoutes(host, {
+      profile: 'desktop',
+      profileDir: '/tmp/dsh-skin-market-route-desktop-agents',
+      runner: async () => ({ exitCode: 0, stdout: '', stderr: '', timedOut: false }),
+      hostKind: 'desktop',
+      agents: undefined,
+      marketUpdater,
+    })
+
+    let status = 0
+    let body = ''
+    const response = {
+      writeHead: (value: number) => { status = value },
+      end: (value: string) => { body = value },
+    } as unknown as ServerResponse
+    await handlers.get('/dsh-skin-market/state')?.({ method: 'GET', headers: {} } as IncomingMessage, response)
+    expect(status).toBe(200)
+    expect(JSON.parse(body)).toMatchObject({ hostKind: 'desktop', runningAgentCount: 0 })
+    await dispose()
+  })
+
   it('exports a bounded diagnostic log as plain text', async () => {
     const handlers = new Map<string, (request: IncomingMessage, response: ServerResponse) => void | Promise<void>>()
     const webServer: WebServerService = {

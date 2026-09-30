@@ -38,14 +38,17 @@ export declare class SkinLifecycle {
     private readonly pendingBuildKeys;
     private readonly deadlines;
     private readonly deadlineTimers;
+    private readonly operationCleanupTimers;
     private readonly expired;
     private readonly profileMutations;
     private readonly recoveryErrors;
     private readonly desktopManagedAttempts;
     private readonly desktopRecoveryBaselines;
+    private readonly executions;
     private catalogEntries;
     private skinById;
     private disposeEvent?;
+    private disposed;
     constructor(host: LifecycleHost, options: LifecycleOptions, catalog?: SkinEntry[]);
     get catalog(): SkinEntry[];
     private get hostKind();
@@ -58,7 +61,7 @@ export declare class SkinLifecycle {
     private repairMaterializedPackage;
     replaceCatalog(catalog: SkinEntry[]): Promise<void>;
     start(): void;
-    dispose(): void;
+    dispose(): Promise<void>;
     skin(id: string): SkinEntry;
     private entriesFor;
     private setEntryDisabled;

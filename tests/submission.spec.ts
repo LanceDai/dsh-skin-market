@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createSkinInstallCommand, createSkinInstallPrompt, createSubmissionPrompt, normalizeGitHubRepository, REGISTRY_REPOSITORY } from '../src/client/submission.ts'
+import { createSkinInstallCommand, createSkinInstallPrompt, createSkinInstallSearchKeyword, createSubmissionPrompt, normalizeGitHubRepository, REGISTRY_REPOSITORY } from '../src/client/submission.ts'
 import type { CatalogSkin } from '../src/client/types.ts'
 
 describe('agent-assisted skin submission', () => {
@@ -76,6 +76,7 @@ describe('agent-assisted skin submission', () => {
     expect(prompt).toContain('伴生包：@dsh-external/dsh-client-ui-skin-deep-whale-manager')
     expect(prompt).toContain('全部固定安装命令（含伴生包）')
     expect(prompt).toContain('ui-skin-deep-whale-manager')
+    expect(createSkinInstallSearchKeyword(skin)).toBe(skin.install.target)
   })
 
   it('uses the same reviewed npm target in the command and prompt without GitHub build approval', () => {

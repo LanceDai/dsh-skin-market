@@ -24,8 +24,8 @@ install:
     mode: managed
     registry: npm
     packageName: dsh-official-homepage-theme
-    packageVersion: 1.0.6
-    integrity: sha512-1cR3E5fn6HSTitI7gVEfBOrx5cejxvWuRqAfqpKxMRQWVXajUlcIhmcOCjEljIt2ZMvDTdCBzpVj22Kx2N0YTw==
+    packageVersion: 1.0.7
+    integrity: sha512-NNSnPIeK5HHG1ogholwmUEcqtQz/FdJ3CG1UWsRRNlRQbdghf29v1q7/RPb5jaZw8rUz6SLCngqX0zPR05Iolw==
   npm:
     name: dsh-official-homepage-theme
     version: 1.0.7

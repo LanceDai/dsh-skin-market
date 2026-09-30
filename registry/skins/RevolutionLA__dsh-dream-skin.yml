@@ -24,8 +24,8 @@ install:
     mode: managed
     registry: npm
     packageName: dsh-dream-skin
-    packageVersion: 0.4.14
-    integrity: sha512-bSpksAe3ugJLwF3Op6EhBjQ5/rKIxVQWUyUBEgnBZ+ekSiI9fopFQe+EOIuvQKmwUcCuiS7GMKDQiweiUPH76Q==
+    packageVersion: 9.26.1
+    integrity: sha512-Y34Am+Vcf1gWP2VJ3LHpPcGCvTjyPc11GeefpAIATVUspu+EhWlnFx0OjhifdfcyI2GcL5Z+EhVQQZyd5Xj3iA==
   npm:
     name: dsh-dream-skin
     version: 9.26.1

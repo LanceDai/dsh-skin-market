@@ -22,8 +22,8 @@ install:
     mode: managed
     registry: npm
     packageName: "@pakiknowledge/dsh-client-ui-skin-claude"
-    packageVersion: 0.2.0
-    integrity: sha512-bqjyiIVGOpaEgo/tYSELSNLKNIq1QZ9KoIMdXRw5qfihSKAXzoLqs7iRU/wTc0kjMQuIdElOIbyvohBSG1OAIw==
+    packageVersion: 0.2.1
+    integrity: sha512-EAsMW/XQ2TSqevzCdrF7M9e9DwmNMUqrEO/rqld9QLYizh2sJuEoV4nHqtviZTftsALNNL8aXj2cmN3/ppSyYg==
   npm:
     name: "@pakiknowledge/dsh-client-ui-skin-claude"
     version: 0.2.1

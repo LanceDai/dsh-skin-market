@@ -23,11 +23,8 @@ install:
   version: 0.2.5
   commit: 140ed3c3133ecb31761845224f4ec91d45ba747e
   desktop:
-    mode: managed
-    registry: npm
-    packageName: dsh-catppuccin
-    packageVersion: 0.2.1
-    integrity: sha512-jHIB4oeHD07iIIl4kpbZ0n+5FzhGTzWd/jkbY9aWH5PILAostlFyt0NE4G+KDJsxG3kC/oiAUE8qM6j+Sx6LEQ==
+    mode: manual-only
+    reason: npm-source-unverified
 compatibility:
   dsh: ^0.1.0-rc.6
   platform:

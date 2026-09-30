@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { parse, stringify } from 'yaml'
 import { maxParallelDownloads, SkinLifecycle } from '../src/lifecycle.ts'
 import { atomicWriteJson, atomicWriteText, compatibilityPatchFile, ensurePatchedDependency, patchedDependenciesNeedSync, pnpmWorkspaceFile, profilePatchFile, readDependencies, readMarketState, writeMarketState } from '../src/profile.ts'
-import type { CommandResult, PluginInstallRequest, PluginRunner } from '../src/commands.ts'
+import type { CommandOptions, CommandResult, PluginInstallRequest, PluginRunner } from '../src/commands.ts'
 import type { LoaderEntry, Operation } from '../src/types.ts'
 
 function fixture() {
@@ -524,6 +524,46 @@ describe('skin lifecycle', () => {
     expect(calls[0]?.pnpmOptions).not.toContain('--config.minimumReleaseAge=0')
     expect(calls[1]?.pnpmOptions).toContain('--config.minimumReleaseAge=0')
     expect(calls[0]?.receiptId).toBe(calls[1]?.receiptId)
+  })
+
+  it('aborts and awaits a Desktop install when the lifecycle is disposed', async () => {
+    const dir = fixture()
+    const probe = new SkinLifecycle({ loader: { entries: () => [] } }, { profile: 'test', profileDir: dir, runner: async () => success() })
+    const base = probe.catalog[0]
+    const managed = {
+      ...base,
+      id: 'desktop.dispose',
+      install: {
+        ...base.install,
+        desktop: { mode: 'managed' as const, registry: 'npm' as const, packageName: base.package, packageVersion: base.install.version },
+      },
+    }
+    let started = false
+    let aborted = false
+    const runner: PluginRunner = Object.assign(
+      async () => success(),
+      {
+        installPlugin: async (_profile: string, _request: PluginInstallRequest, options?: CommandOptions) => {
+          started = true
+          return await new Promise<CommandResult>(resolve => {
+            options?.signal?.addEventListener('abort', () => {
+              aborted = true
+              resolve({ ...success(), exitCode: null, aborted: true })
+            }, { once: true })
+          })
+        },
+      },
+    )
+    const lifecycle = new SkinLifecycle({ loader: { entries: () => [] } }, { profile: 'test', profileDir: dir, runner, hostKind: 'desktop' }, [managed])
+    const operation = lifecycle.begin('install', managed.id)
+    for (let index = 0; index < 200 && !started; index += 1) await new Promise(resolve => setTimeout(resolve, 5))
+
+    await lifecycle.dispose()
+
+    expect(started).toBe(true)
+    expect(aborted).toBe(true)
+    expect(operation.phase).toBe('cancelled')
+    expect(lifecycle.currentOperations()).toHaveLength(0)
   })
 
   it('auto-retries a new-package lockfile failure before mutating the live profile', async () => {

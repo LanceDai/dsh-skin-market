@@ -20,11 +20,8 @@ install:
   version: 0.2.2
   commit: 72c6213c5e8a34be473722dcea9ec3f7f539b0ca
   desktop:
-    mode: managed
-    registry: npm
-    packageName: dsh-animation-optimization
-    packageVersion: 0.2.0
-    integrity: sha512-H07fWhLXmLuygSWBr5v5rYCOKMuLpoCH6LA3P9+Reh5VGsv20rizJCkgecNjyGsjFcN2647RsC9Nza2mxcNgAg==
+    mode: manual-only
+    reason: npm-source-unverified
 compatibility:
   dsh: ^0.1.0-rc.6
   platform:

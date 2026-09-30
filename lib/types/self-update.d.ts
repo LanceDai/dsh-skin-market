@@ -29,6 +29,8 @@ export interface MarketUpdater {
     currentOperation(): MarketUpdateOperation | null;
     cancel(id: string): MarketUpdateOperation;
     retry(id: string): MarketUpdateOperation;
+    /** Stop a route mount cleanly, joining any host package-manager request. */
+    dispose?(): Promise<void>;
     readonly restartRequired: boolean;
 }
 export declare function packageVersion(): string;
@@ -37,4 +39,5 @@ export declare function createMarketUpdater(profile: string, runner: PluginRunne
     currentVersion?: string;
     fetch?: typeof fetch;
     cacheMs?: number;
+    profileDir?: string;
 }): MarketUpdater;

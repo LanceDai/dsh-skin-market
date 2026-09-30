@@ -20,11 +20,8 @@ install:
   version: 0.4.2
   commit: c76b9217c2e6a0613870e2ce0727a960bb9defa2
   desktop:
-    mode: managed
-    registry: npm
-    packageName: dsh-skin-alphacoders
-    packageVersion: 0.3.0
-    integrity: sha512-MyKXm4lW0PJZRkXe83snVIvHEKB1AdVDxaiR9rF0vClyKXxcz42bhAEJQWrW4ELfkQKDJPwulMnV7rm21BaYMQ==
+    mode: manual-only
+    reason: npm-source-unverified
 compatibility:
   dsh: ^0.1.0-rc.6
   platform:

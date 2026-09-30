@@ -20,11 +20,8 @@ install:
   version: 0.2.3
   commit: 4eb4458d9c98220383dfc588a61cddb08c36fe6f
   desktop:
-    mode: managed
-    registry: npm
-    packageName: "@yuquexianzhou/solarized-dsh-theme"
-    packageVersion: 0.1.1
-    integrity: sha512-9GdwEyUCUSmUqfOV/comS5pTj6ONJsvfhMwSKMUhm9ProNG//A9kWZb9KxZWfvdX9B5QX5tUhFWZyguULsrxNA==
+    mode: manual-only
+    reason: npm-source-unverified
 compatibility:
   dsh: ^0.1.0-rc.6
   platform:

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import type { CommandOptions, CommandResult, PluginInstallRequest, PluginRunner } from './commands.ts'
 
 /**
@@ -24,6 +25,7 @@ function resultText(value: unknown): string {
   const errorRecord = asRecord(error)
   if (typeof errorRecord?.message === 'string' && errorRecord.message.trim() !== '') return errorRecord.message
   const packageResult = asRecord(record?.packageResult)
+  if (typeof packageResult?.output === 'string' && packageResult.output.trim() !== '') return packageResult.output
   if (typeof packageResult?.message === 'string' && packageResult.message.trim() !== '') return packageResult.message
   try {
     const json = JSON.stringify(value)
@@ -36,6 +38,15 @@ function resultText(value: unknown): string {
 function resultFailed(value: unknown): boolean {
   const record = asRecord(value)
   if (record === undefined) return false
+  // The official manager reports the host-side outcome separately from the
+  // package-manager result.  Once that field is present it is authoritative:
+  // a successful package install can still be rejected while applying the
+  // profile, and a non-zero package exit can be wrapped by a successful host
+  // application result.
+  const application = record.application
+  if (application !== undefined) {
+    return application !== 'applied' && application !== 'restart-required' && application !== 'overridden'
+  }
   return record.ok === false
     || record.success === false
     || record.application === 'failed'
@@ -74,9 +85,11 @@ async function callManager(
   }
   let timedOut = false
   let cancellation: Promise<unknown> | undefined
+  let cancelRequested = false
   const requestCancel = (): void => {
-    if (cancellation !== undefined || cancel === undefined) return
-    try { cancellation = cancel() } catch { /* the operation result remains authoritative */ }
+    if (cancelRequested || cancel === undefined) return
+    cancelRequested = true
+    try { cancellation = Promise.resolve(cancel()) } catch { /* the operation result remains authoritative */ }
   }
   const onAbort = (): void => requestCancel()
   options?.signal?.addEventListener('abort', onAbort, { once: true })
@@ -122,7 +135,13 @@ export function officialDesktopRunner(
     if (verb === 'add') {
       const target = targetAfterVerb(args)
       if (target === undefined) return managerError(new Error('官方 Desktop add 缺少插件目标'), options)
-      return await callManager(() => manager.installBundle(target, { enabled: false }), options)
+      if (manager.cancelInstall === undefined) return managerError(new Error('官方 Desktop pluginManager 不支持可取消的安装操作'), options)
+      const requestId = randomUUID()
+      return await callManager(
+        () => manager.installBundle(target, { enabled: false, requestId }),
+        options,
+        () => manager.cancelInstall!(requestId),
+      )
     }
     return managerError(new Error(`官方 Desktop pluginManager 不支持 ${verb ?? '空命令'}`), options)
   }
@@ -131,11 +150,12 @@ export function officialDesktopRunner(
   runner.installPlugin = async (_profile, request: PluginInstallRequest, options) => {
     const manager = getManager()
     if (manager === undefined) return managerError(new Error('官方 Desktop 未提供 pluginManager'), options)
+    if (manager.cancelInstall === undefined) return managerError(new Error('官方 Desktop pluginManager 不支持可取消的安装操作'), options)
     const target = `${request.packageName}@${request.packageVersion}`
     return await callManager(
       () => manager.installBundle(target, { enabled: false, requestId: request.receiptId }),
       options,
-      manager.cancelInstall === undefined ? undefined : () => manager.cancelInstall!(request.receiptId),
+      () => manager.cancelInstall!(request.receiptId),
     )
   }
   return runner

@@ -79,6 +79,37 @@ describe('market self update', () => {
     expect(runner).not.toHaveBeenCalled()
   })
 
+  it('aborts and waits for an in-flight self-update when the route is disposed', async () => {
+    let resolveRunner!: (result: { exitCode: number | null; stdout: string; stderr: string; timedOut: boolean; aborted: boolean }) => void
+    const runner = vi.fn(() => new Promise(resolve => { resolveRunner = resolve }))
+    const updater = createMarketUpdater('desktop', runner, {
+      currentVersion: '0.1.15',
+      profileDir: mkdtempSync(join(tmpdir(), 'dsh-market-self-update-dispose-')),
+      fetch: vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          'dist-tags': { latest: '0.1.16' },
+          versions: {
+            '0.1.16': {
+              version: '0.1.16',
+              gitHead: 'd'.repeat(40),
+              dist: { tarball: 'https://registry.npmjs.org/dsh-skin-market/-/dsh-skin-market-0.1.16.tgz' },
+            },
+          },
+        }),
+      })) as unknown as typeof fetch,
+      cacheMs: 0,
+    })
+
+    const operation = updater.startUpdate()
+    await vi.waitFor(() => expect(runner).toHaveBeenCalled())
+    const disposing = updater.dispose!()
+    expect(operation.phase).toBe('cancelling')
+    resolveRunner({ exitCode: null, stdout: '', stderr: '', timedOut: false, aborted: true })
+    await disposing
+    expect(operation.phase).toBe('cancelled')
+  })
+
   it('retries a self-update once when the new package is inside the release-age cutoff', async () => {
     const commit = 'c'.repeat(40)
     const fetchLatest = vi.fn(async () => ({

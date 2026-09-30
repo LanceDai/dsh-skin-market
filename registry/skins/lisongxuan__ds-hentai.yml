@@ -17,11 +17,8 @@ install:
   version: 0.7.0
   commit: e8a2134256f4217a37fbfe3ab241de0334c071a7
   desktop:
-    mode: managed
-    registry: npm
-    packageName: ds-hentai
-    packageVersion: 0.6.0
-    integrity: sha512-oVtowukG2fMzoYzdZaeJnXlwP2+C4hkyIxNmtLyBvRRlr/CsmQTJPZ2WsEDD47uZWqqpPJaSjtoJVC+J7LOtiA==
+    mode: manual-only
+    reason: npm-source-unverified
 compatibility:
   dsh: 0.1.0-rc.6
   platform:

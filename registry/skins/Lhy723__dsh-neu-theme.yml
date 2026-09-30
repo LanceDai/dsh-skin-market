@@ -24,8 +24,8 @@ install:
     mode: managed
     registry: npm
     packageName: dsh-neu-theme
-    packageVersion: 0.1.0
-    integrity: sha512-ZH3xVtpDvw11zpN0RotrV0u6ODoEGbDwYw6QclCU7MFf/rx32eDOJoGUIYEPZ3ANWcIkAIMROjnRx2z8Z89kOA==
+    packageVersion: 0.1.2
+    integrity: sha512-nkR0gAv/ez4LtXFwKDLvU8It6eGTRrqzdpaxAFqEhaP7GbriqaAmPF7bnZhlym+UWwuYNw3SRA/VJ/k2G3wkwQ==
   npm:
     name: dsh-neu-theme
     version: 0.1.2

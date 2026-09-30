@@ -39,6 +39,10 @@ for (const file of files) {
   for (const adapter of skin.compatibility.adapters ?? []) {
     if (!isVersionRange(adapter.when)) throw new Error(`${file}: compatibility adapter ${adapter.id} has an invalid when range`)
   }
+  if (skin.install.desktop?.mode === 'managed') {
+    if (skin.install.desktop.packageName !== skin.package) throw new Error(`${file}: install.desktop.packageName must equal ${skin.package}`)
+    if (skin.install.desktop.packageVersion !== skin.install.version) throw new Error(`${file}: install.desktop.packageVersion must equal install.version ${skin.install.version}`)
+  }
   const repo = skin.repo.replace(/^https:\/\/github\.com\//, '').replace(/\/$/, '')
   const expected = `github:${repo}#${skin.install.commit}${skin.subpath ? `&path:/${String(skin.subpath).replace(/^\/+/, '')}` : ''}`
   if (skin.install.target !== expected) throw new Error(`${file}: install.target must equal ${expected}`)

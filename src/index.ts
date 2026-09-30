@@ -15,35 +15,60 @@ interface EffectHost extends SkinMarketHost {
   effect(callback: () => (() => void | Promise<void>), label: string): void
 }
 
+interface LocalServiceReader {
+  get?(name: string): unknown
+}
+
 function argvProfile(): string | undefined {
   const index = process.argv.indexOf('--profile')
   return index >= 0 && process.argv[index + 1] !== undefined ? process.argv[index + 1] : undefined
 }
 
 export function apply(ctx: Context, config?: Config): void {
-  ctx.inject(['webServer', 'loader', 'agents'], hostContext => {
+  // Agent coordination is optional.  The official Electron Desktop does not
+  // expose the Web Agent registry in every generation, while the market only
+  // needs it when a Web/Host restart is explicitly requested.
+  ctx.inject(['webServer', 'loader'], hostContext => {
     const host = hostContext as unknown as EffectHost
-    const desktopProfiles = ctx.get('desktopProfiles') as DesktopProfilesLike | undefined
-    const profileContext = ctx.get('profileContext') as ProfileContextLike | undefined
+    const localServices = hostContext as unknown as LocalServiceReader
+    const readService = (name: string): unknown => {
+      const rootValue = ctx.get(name)
+      if (rootValue !== undefined) return rootValue
+      return localServices.get?.(name)
+    }
+    const desktopProfiles = readService('desktopProfiles') as DesktopProfilesLike | undefined
+    const profileContext = readService('profileContext') as ProfileContextLike | undefined
     const contextName = typeof profileContext?.name === 'string' ? profileContext.name.trim() : ''
     const contextDir = typeof profileContext?.dir === 'string' ? profileContext.dir.trim() : ''
+    const configuredProfile = typeof config?.profile === 'string' ? config.profile.trim() : undefined
+    const launchedProfile = contextName !== '' ? contextName : argvProfile()
+    const agents = readService('agents') as SkinMarketHost['agents']
+    const pluginManager = readService('pluginManager') as OfficialPluginManagerLike | undefined
+    const officialDesktop = configuredProfile?.toLowerCase() === 'desktop'
+      || (configuredProfile === undefined && launchedProfile?.toLowerCase() === 'desktop')
+      || (desktopProfiles === undefined && pluginManager !== undefined)
     // Official Electron Desktop owns its profile through profileContext and
     // pluginManager; its CLI rejects `--profile desktop`. Resolve this branch
     // before the ordinary CLI fallback so actions mutate the visible profile.
-    if (desktopProfiles === undefined && config?.profile === undefined && contextName.toLowerCase() === 'desktop' && contextDir !== '') {
-      const runner = officialDesktopRunner(() => hostContext.get('pluginManager') as OfficialPluginManagerLike | undefined)
+    if (officialDesktop) {
+      const profile = 'desktop'
+      // An official Desktop generation may not expose profileContext.dir until
+      // after startup. Never fall back to the Web profile in that case: the
+      // canonical Desktop directory is the explicit profile name's directory.
+      const profileDir = contextDir !== '' ? contextDir : resolveProfileDir(profile)
+      const runner = officialDesktopRunner(() => (readService('pluginManager') as OfficialPluginManagerLike | undefined))
       host.effect(
-        () => mountRoutes(host, { profile: contextName, profileDir: contextDir, runner, hostKind: 'desktop', runtime: detectDshRuntime() }),
+        () => mountRoutes(host, { profile, profileDir, runner, hostKind: 'desktop', runtime: detectDshRuntime(), agents: undefined }),
         'dsh-skin-market: official Desktop routes',
       )
       return
     }
     if (desktopProfiles === undefined) {
-      const profile = config?.profile ?? (contextName !== '' ? contextName : undefined) ?? argvProfile() ?? 'web'
-      const profileDir = config?.profile === undefined && contextDir !== '' ? contextDir : resolveProfileDir(profile)
-      const appExit = ctx.get('appExit') as ((code: number) => void) | undefined
+      const profile = configuredProfile ?? launchedProfile ?? 'web'
+      const profileDir = configuredProfile === undefined && contextDir !== '' ? contextDir : resolveProfileDir(profile)
+      const appExit = readService('appExit') as ((code: number) => void) | undefined
       const restart = appExit === undefined ? undefined : createCliRestartScheduler(appExit)
-      host.effect(() => mountRoutes(host, { profile, profileDir, runner: runPluginCli, hostKind: 'dsh', runtime: detectDshRuntime(), restart }), 'dsh-skin-market: routes')
+      host.effect(() => mountRoutes(host, { profile, profileDir, runner: runPluginCli, hostKind: 'dsh', runtime: detectDshRuntime(), restart, agents }), 'dsh-skin-market: routes')
       return
     }
     hostContext.inject(['desktopPnpm'], desktopContext => {
@@ -51,7 +76,7 @@ export function apply(ctx: Context, config?: Config): void {
       const service = (desktopContext as unknown as { desktopPnpm: DesktopPnpmLike }).desktopPnpm
       const desktopHost = desktopContext as unknown as EffectHost
       desktopHost.effect(
-        () => mountRoutes(host, { profile: current.name, profileDir: current.dir, runner: desktopRunner(service, current.dir), hostKind: 'desktop', runtime: detectDshRuntime() }),
+        () => mountRoutes(host, { profile: current.name, profileDir: current.dir, runner: desktopRunner(service, current.dir), hostKind: 'desktop', runtime: detectDshRuntime(), agents }),
         'dsh-skin-market: desktop routes',
       )
     })

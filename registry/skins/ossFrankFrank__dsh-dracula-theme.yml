@@ -23,8 +23,8 @@ install:
     mode: managed
     registry: npm
     packageName: dsh-dracula-theme
-    packageVersion: 1.0.0
-    integrity: sha512-RI/LoRKTPmjko2UbmtWeq72lCy0+PEooMlWMDWOLmVyXaJXAQmVMB3dV3dnXlIQpsenHwkarnspUV3F/JgQh5w==
+    packageVersion: 1.1.0
+    integrity: sha512-R2biqmAXf/reh7AvQPtX2ixx0gfqDAw+yoMAofpwdNAjmIRJZ8uZrQ3tQq9vpll5suiRRckemBP1ujJcVXA1aUw==
   npm:
     name: dsh-dracula-theme
     version: 1.1.0

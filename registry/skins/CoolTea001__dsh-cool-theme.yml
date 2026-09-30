@@ -23,8 +23,8 @@ install:
     mode: managed
     registry: npm
     packageName: dsh-cool-theme
-    packageVersion: 0.4.0
-    integrity: sha512-LP7QneJrdTw+UjnDNwC1/lzPd8vV64R7nN87f72BNiy3dfdwlo3pRbep9oY9Fuki+Eh6RINVxSRZDJys8SArCQ==
+    packageVersion: 0.6.1
+    integrity: sha512-ec4yWlo2yrnsE3jtiryReF6t8upIobhtvYU6W/mhCiYafNFngVO4iSkrA2z2ts0L839KRuoM82r/MNZCIblwyg==
   npm:
     name: dsh-cool-theme
     version: 0.6.1

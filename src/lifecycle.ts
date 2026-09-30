@@ -196,14 +196,17 @@ export class SkinLifecycle {
   private readonly pendingBuildKeys = new Map<string, string[]>()
   private readonly deadlines = new Map<string, number>()
   private readonly deadlineTimers = new Map<string, ReturnType<typeof setTimeout>>()
+  private readonly operationCleanupTimers = new Map<string, ReturnType<typeof setTimeout>>()
   private readonly expired = new Set<string>()
   private readonly profileMutations = new Map<string, number>()
   private readonly recoveryErrors = new Map<string, string>()
   private readonly desktopManagedAttempts = new Set<string>()
   private readonly desktopRecoveryBaselines = new Map<string, { snapshot: ProfileInstallSnapshot; mutationsBefore: number }>()
+  private readonly executions = new Map<string, Promise<void>>()
   private catalogEntries: SkinEntry[]
   private skinById: Map<string, SkinEntry>
   private disposeEvent?: () => void
+  private disposed = false
 
   constructor(private readonly host: LifecycleHost, private readonly options: LifecycleOptions, catalog = loadCatalog().skins) {
     this.catalogEntries = catalog
@@ -268,6 +271,7 @@ export class SkinLifecycle {
   }
 
   start(): void {
+    if (this.disposed) return
     void this.replay()
     this.disposeEvent = this.host.on?.('internal/plugin', fiber => {
       const name = fiber.entry?.options?.name
@@ -280,7 +284,28 @@ export class SkinLifecycle {
     })
   }
 
-  dispose(): void { this.disposeEvent?.() }
+  async dispose(): Promise<void> {
+    if (this.disposed) return
+    this.disposed = true
+    this.disposeEvent?.()
+    this.disposeEvent = undefined
+    for (const controller of this.abortControllers.values()) controller.abort()
+    await Promise.allSettled([...this.executions.values()])
+    for (const timer of this.deadlineTimers.values()) clearTimeout(timer)
+    for (const timer of this.operationCleanupTimers.values()) clearTimeout(timer)
+    this.deadlineTimers.clear()
+    this.operationCleanupTimers.clear()
+    this.operations.clear()
+    this.pendingBuildKeys.clear()
+    this.deadlines.clear()
+    this.expired.clear()
+    this.profileMutations.clear()
+    this.recoveryErrors.clear()
+    this.desktopManagedAttempts.clear()
+    this.desktopRecoveryBaselines.clear()
+    this.abortControllers.clear()
+    this.executions.clear()
+  }
 
   skin(id: string): SkinEntry {
     const skin = this.skinById.get(id)
@@ -452,6 +477,7 @@ export class SkinLifecycle {
   }
 
   begin(kind: OperationKind, skinId: string, approvedBuildKeys?: readonly string[] | string): Operation {
+    if (this.disposed) throw new Error('皮肤市场宿主已停止，不能开始新的操作')
     const skin = this.skin(skinId)
     if (kind === 'install' || kind === 'update' || kind === 'migrate') {
       if (this.hostKind === 'desktop' && skin.install.desktop?.mode !== 'managed') {
@@ -486,7 +512,11 @@ export class SkinLifecycle {
     const buildKeys = typeof approvedBuildKeys === 'string' ? [approvedBuildKeys] : approvedBuildKeys
     if (buildKeys !== undefined && buildKeys.length > 0) this.pendingBuildKeys.set(operation.id, [...new Set(buildKeys)])
     logEvent('info', 'operation', `${kind} ${skin.package}`, operation.id)
-    void this.execute(operation)
+    const execution = this.execute(operation)
+    this.executions.set(operation.id, execution)
+    void execution.finally(() => {
+      if (this.executions.get(operation.id) === execution) this.executions.delete(operation.id)
+    }).catch(() => undefined)
     return operation
   }
 
@@ -634,10 +664,12 @@ export class SkinLifecycle {
       this.desktopRecoveryBaselines.delete(operation.id)
       this.abortControllers.delete(operation.id)
       const timer = setTimeout(() => {
+        this.operationCleanupTimers.delete(operation.id)
         this.operations.delete(operation.id)
         this.pendingBuildKeys.delete(operation.id)
       }, 30 * 60 * 1000)
       timer.unref?.()
+      this.operationCleanupTimers.set(operation.id, timer)
     }
   }
 

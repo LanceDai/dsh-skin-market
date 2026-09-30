@@ -112,6 +112,8 @@ export interface MarketUpdater {
   currentOperation(): MarketUpdateOperation | null
   cancel(id: string): MarketUpdateOperation
   retry(id: string): MarketUpdateOperation
+  /** Stop a route mount cleanly, joining any host package-manager request. */
+  dispose?(): Promise<void>
   readonly restartRequired: boolean
 }
 
@@ -127,7 +129,7 @@ export { compareVersions } from './semver.ts'
 export function createMarketUpdater(
   profile: string,
   runner: PluginRunner,
-  options: { currentVersion?: string; fetch?: typeof fetch; cacheMs?: number } = {},
+  options: { currentVersion?: string; fetch?: typeof fetch; cacheMs?: number; profileDir?: string } = {},
 ): MarketUpdater {
   const fetchLatest = options.fetch ?? fetch
   let installedVersion = options.currentVersion ?? packageVersion()
@@ -137,8 +139,11 @@ export function createMarketUpdater(
   let updating = false
   let restartRequired = false
   let activeOperation: string | null = null
+  let disposed = false
   const operations = new Map<string, MarketUpdateOperation>()
   const abortControllers = new Map<string, AbortController>()
+  const updatePromises = new Map<string, Promise<void>>()
+  const profileDir = options.profileDir ?? resolveProfileDir(profile)
 
   const setOperation = (operation: MarketUpdateOperation, patch: Partial<MarketUpdateOperation>): void => {
     Object.assign(operation, patch)
@@ -167,7 +172,6 @@ export function createMarketUpdater(
       }
       const run = async (args: readonly string[]) => {
         await runner.ensurePnpm?.({ signal: controller.signal })
-        const profileDir = resolveProfileDir(profile)
         const effectiveArgs = pluginArgsFor(profileDir, args)
         try {
           await runPnpmWithRecovery(effectiveArgs, {
@@ -261,6 +265,7 @@ export function createMarketUpdater(
   }
 
   const startUpdate = (): MarketUpdateOperation => {
+    if (disposed) throw new Error('皮肤市场更新器已停止')
     if (activeOperation !== null) return operations.get(activeOperation)!
     const operation: MarketUpdateOperation = { id: randomUUID(), phase: 'queued', cancelable: true, startedAt: new Date().toISOString() }
     operations.set(operation.id, operation)
@@ -268,7 +273,12 @@ export function createMarketUpdater(
     updating = true
     const controller = new AbortController()
     abortControllers.set(operation.id, controller)
-    void updateTarget(operation, controller)
+    const updatePromise = updateTarget(operation, controller)
+    updatePromises.set(operation.id, updatePromise)
+    void updatePromise.then(
+      () => { updatePromises.delete(operation.id) },
+      () => { updatePromises.delete(operation.id) },
+    )
     const timer = setTimeout(() => operations.delete(operation.id), 30 * 60 * 1000)
     timer.unref?.()
     return operation
@@ -301,6 +311,17 @@ export function createMarketUpdater(
       const failed = operations.get(id)
       if (failed === undefined || failed.phase !== 'failed' || failed.failure?.action !== 'retry') throw new Error('更新任务不可重试')
       return startUpdate()
+    },
+    async dispose() {
+      disposed = true
+      for (const id of abortControllers.keys()) {
+        const operation = operations.get(id)
+        if (operation?.cancelable === true) {
+          setOperation(operation, { phase: 'cancelling', message: '正在停止皮肤市场更新' })
+        }
+        abortControllers.get(id)?.abort()
+      }
+      await Promise.all([...updatePromises.values()])
     },
   }
 }
