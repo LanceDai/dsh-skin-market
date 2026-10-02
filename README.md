@@ -15,7 +15,7 @@
 
 ### 近期收录
 
-- [2026-09-08：新增 73 项主题与外观扩展](./docs/recently-added.md#batch-2026-09-08)
+- **2026-10-02**：本批新增 **1 条**；详见[本批收录日志](./docs/recently-added.md#自动同步更新)。
 - 更多请查看[收录日志](./docs/recently-added.md)
 
 

@@ -271,6 +271,14 @@ Windows XP Luna 皮肤：蓝色渐变窗口、绿色开始按钮、银色任务�
 <!-- DSH_SKIN_MARKET_AUTO_RECENT:START -->
 ## 自动同步更新
 
+<!-- dsh-auto-entry:qweq.cell.del.dsh.whale.girl.wallpaper -->
+### 2026-10-02 · 鲸鱼娘动态壁纸
+
+[QWEQ-CELL-DEL/dsh-whale-girl-wallpaper](https://github.com/QWEQ-CELL-DEL/dsh-whale-girl-wallpaper)：把「DeepSeek 鲸鱼娘」动态壁纸视频设为 DSH Web 全屏背景的社区皮肤。
+
+- 版本：`0.1.0`
+- 固定 commit：`f69490ef6563a481abe8a792c2283657d06e18a8`
+
 <!-- dsh-auto-entry:lengduan.dsh-815-skin -->
 ### 2026-09-29 · dsh-815-skin
 
