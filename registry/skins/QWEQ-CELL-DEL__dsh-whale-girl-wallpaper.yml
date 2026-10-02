@@ -1,6 +1,49 @@
-url: https://github.com/QWEQ-CELL-DEL/dsh-whale-girl-wallpaper
+id: qweq.cell.del.dsh.whale.girl.wallpaper
 name:
   zh: 鲸鱼娘动态壁纸
   en: Whale Girl Wallpaper
 author: QWEQ-CELL-DEL
 description: 把「DeepSeek 鲸鱼娘」动态壁纸视频设为 DSH Web 全屏背景的社区皮肤。
+repo: https://github.com/QWEQ-CELL-DEL/dsh-whale-girl-wallpaper
+package: dsh-whale-girl-wallpaper
+rowId: whale-girl-wallpaper
+category: theme
+tags:
+  - appearance
+modes:
+  - light
+  - dark
+install:
+  target: github:QWEQ-CELL-DEL/dsh-whale-girl-wallpaper#f69490ef6563a481abe8a792c2283657d06e18a8
+  version: 0.1.0
+  commit: f69490ef6563a481abe8a792c2283657d06e18a8
+compatibility:
+  dsh: ">=0.1.0-rc.6"
+  platform:
+    - web
+screenshots:
+  - https://raw.githubusercontent.com/QWEQ-CELL-DEL/dsh-whale-girl-wallpaper/f69490ef6563a481abe8a792c2283657d06e18a8/screenshots/preview-1.png
+  - https://raw.githubusercontent.com/QWEQ-CELL-DEL/dsh-whale-girl-wallpaper/f69490ef6563a481abe8a792c2283657d06e18a8/screenshots/preview-2.png
+  - https://raw.githubusercontent.com/QWEQ-CELL-DEL/dsh-whale-girl-wallpaper/f69490ef6563a481abe8a792c2283657d06e18a8/screenshots/preview-3.png
+review:
+  compatibility: verified
+  preview: verified
+  installation: verified
+health:
+  status: healthy
+  checks:
+    readmeScreenshots: pass
+    compatibility: pass
+    installation: pass
+    installCommand: pass
+    topic: pass
+  suggestions: []
+license:
+  code: MIT
+  commercialUse: true
+featuredRank: 1000
+starsSnapshot: 0
+releaseUpdatedAt: 2026-10-02T08:17:32.479Z
+metadataUpdatedAt: 2026-10-02T08:17:32.479Z
+starsUpdatedAt: 2026-10-02T08:17:32.479Z
+updatedAt: 2026-10-02T08:17:32.479Z
