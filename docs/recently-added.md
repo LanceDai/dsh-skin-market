@@ -271,6 +271,14 @@ Windows XP Luna 皮肤：蓝色渐变窗口、绿色开始按钮、银色任务�
 <!-- DSH_SKIN_MARKET_AUTO_RECENT:START -->
 ## 自动同步更新
 
+<!-- dsh-auto-entry:king-of-soy-sauce.liang-intensity -->
+### 2026-10-03 · 滑动变祖
+
+[kingOfSoySauce/dsh-liang-skin](https://github.com/kingOfSoySauce/dsh-liang-skin)：优化插件大小，大幅提高安装速度，去除多余文件
+
+- 版本：`0.1.9`
+- 固定 commit：`f44d7e02a92bff3ca9f06a5de915a6d85febc367`
+
 <!-- dsh-auto-entry:zjuzhiyucai.dsh-ivory -->
 ### 2026-10-02 · dsh-ivory
 

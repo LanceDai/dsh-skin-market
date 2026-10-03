@@ -5,7 +5,7 @@ name:
 author: kingOfSoySauce
 description: 优化插件大小，大幅提高安装速度，去除多余文件
 repo: https://github.com/kingOfSoySauce/dsh-liang-skin
-package: dsh-client-liang-intensity-skin
+package: "@leon___/dsh-client-liang-intensity-skin"
 rowId: liang-intensity-skin
 category: interactive
 tags:
@@ -16,47 +16,58 @@ tags:
 modes:
   - dark
 install:
-  target: github:kingOfSoySauce/dsh-liang-skin#976fcbf9b4a91b79f14b90c16cbe0d3f553c2bd3
-  version: 0.1.7
-  commit: 976fcbf9b4a91b79f14b90c16cbe0d3f553c2bd3
+  target: github:kingOfSoySauce/dsh-liang-skin#f44d7e02a92bff3ca9f06a5de915a6d85febc367
+  version: 0.1.9
+  commit: f44d7e02a92bff3ca9f06a5de915a6d85febc367
   desktop:
-    mode: manual-only
-    reason: npm-package-not-found
+    mode: managed
+    registry: npm
+    packageName: "@leon___/dsh-client-liang-intensity-skin"
+    packageVersion: 0.1.9
+    integrity: sha512-weuQ6/Sg5D7mZOH+jc/XqMzTD6x6pcPYaT/lInrGsz+LX+0i9+KDSeLt8Lp3WbR5+pEzu/wFOCYb+ew35nJC3Q==
+  npm:
+    name: "@leon___/dsh-client-liang-intensity-skin"
+    version: 0.1.9
+    integrity: sha512-weuQ6/Sg5D7mZOH+jc/XqMzTD6x6pcPYaT/lInrGsz+LX+0i9+KDSeLt8Lp3WbR5+pEzu/wFOCYb+ew35nJC3Q==
+    repository: https://github.com/kingOfSoySauce/dsh-liang-skin
+    gitHead: f44d7e02a92bff3ca9f06a5de915a6d85febc367
 compatibility:
-  dsh: 0.1.0-rc.6
+  dsh: ^0.1.0-rc.6 || 0.2.0-rc.2
   platform:
     - web
 screenshots:
-  - https://raw.githubusercontent.com/kingOfSoySauce/dsh-liang-skin/976fcbf9b4a91b79f14b90c16cbe0d3f553c2bd3/docs/preview.png
+  - https://raw.githubusercontent.com/kingOfSoySauce/dsh-liang-skin/f44d7e02a92bff3ca9f06a5de915a6d85febc367/docs/preview.png
+listScreenshot: https://raw.githubusercontent.com/kingOfSoySauce/dsh-liang-skin/f44d7e02a92bff3ca9f06a5de915a6d85febc367/docs/preview.png
 review:
-  compatibility: verified
+  compatibility: unverified
   preview: verified
   installation: verified
 health:
-  status: healthy
+  status: improvements
   checks:
     readmeScreenshots: pass
-    compatibility: pass
+    compatibility: improve
     installation: pass
     installCommand: pass
     topic: pass
-  suggestions: []
+  suggestions:
+    - DSH 兼容范围待核对：保留的市场范围 ^0.1.0-rc.6 || 0.2.0-rc.2 未被本次检测范围 0.1.0-rc.6 完全覆盖（固定版本 f44d7e02a92bff3ca9f06a5de915a6d85febc367）。已保留原字段，请人工核对；此项是声明冲突，不代表已验证运行失败。
   scan:
-    commit: 976fcbf9b4a91b79f14b90c16cbe0d3f553c2bd3
-    packageVersion: 0.1.7
+    commit: f44d7e02a92bff3ca9f06a5de915a6d85febc367
+    packageVersion: 0.1.9
     scannerVersion: static-v2
     dshVersion: 0.1.0-rc.6
     mode: static
     result: pass
-    checkedAt: 2026-08-23T05:26:58.491Z
+    checkedAt: 2026-10-03T10:44:06.150Z
     findings: []
 license:
   code: NOASSERTION
   commercialUse: false
   notice: 仓库当前未声明许可证；安装和再分发前请向作者确认授权。
 featuredRank: 1
-starsSnapshot: 231
-releaseUpdatedAt: 2026-08-23T05:26:58.597Z
-metadataUpdatedAt: 2026-08-23T05:26:58.597Z
-starsUpdatedAt: 2026-10-02T22:56:12.222Z
-updatedAt: 2026-10-02T22:56:12.222Z
+starsSnapshot: 233
+releaseUpdatedAt: 2026-10-03T10:44:10.854Z
+metadataUpdatedAt: 2026-10-03T10:44:10.854Z
+starsUpdatedAt: 2026-10-03T10:44:10.854Z
+updatedAt: 2026-10-03T10:44:10.854Z
