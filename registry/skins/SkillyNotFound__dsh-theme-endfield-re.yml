@@ -1,5 +1,50 @@
-url: https://github.com/SkillyNotFound/dsh-theme-endfield-re
+id: skillynotfound.dsh.theme.endfield.re
 name:
   zh: 终末地主题（改版）
   en: Endfield Theme (Revised)
+author: SkillyNotFound
 description: 参考《明日方舟：终末地》官网视觉风格的 DSH Web 主题：奶油纸底、墨黑文字、信号黄与武陵青强调色，通体直角，呈工业编辑风；含等高线背景、中央散景、鼠标轨迹与音频通知。
+repo: https://github.com/SkillyNotFound/dsh-theme-endfield-re
+package: dsh-theme-endfield-re
+rowId: theme-endfield-re
+category: theme
+tags:
+  - appearance
+modes:
+  - light
+  - dark
+install:
+  target: github:SkillyNotFound/dsh-theme-endfield-re#569754230cb05266a7c30f946e579cd04ea4a656
+  version: 1.1.5-re.1
+  commit: 569754230cb05266a7c30f946e579cd04ea4a656
+compatibility:
+  dsh: unverified
+  platform:
+    - web
+screenshots:
+  - https://raw.githubusercontent.com/SkillyNotFound/dsh-theme-endfield-re/569754230cb05266a7c30f946e579cd04ea4a656/assets/screenshots1.webp
+  - https://raw.githubusercontent.com/SkillyNotFound/dsh-theme-endfield-re/569754230cb05266a7c30f946e579cd04ea4a656/assets/screenshots2.webp
+review:
+  compatibility: unverified
+  preview: verified
+  installation: verified
+health:
+  status: improvements
+  checks:
+    readmeScreenshots: pass
+    compatibility: improve
+    installation: pass
+    installCommand: pass
+    topic: improve
+  suggestions:
+    - 建议在 README 或 package.json 中明确声明支持的 DSH Web 版本范围（例如 0.1.0-rc.6 或兼容区间），方便用户在安装前确认环境。
+    - 建议为仓库添加 dsh-plugin Topic，方便用户和 DSH 皮肤市场发现它。
+license:
+  code: MIT
+  commercialUse: true
+featuredRank: 1000
+starsSnapshot: 1
+releaseUpdatedAt: 2026-10-05T06:04:32.237Z
+metadataUpdatedAt: 2026-10-05T06:04:32.237Z
+starsUpdatedAt: 2026-10-05T06:04:32.237Z
+updatedAt: 2026-10-05T06:04:32.237Z
