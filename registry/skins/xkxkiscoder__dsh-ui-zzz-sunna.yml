@@ -1,6 +1,52 @@
-url: https://github.com/xkxkiscoder/dsh-ui-zzz-sunna
+id: xkxkiscoder.dsh.ui.zzz.sunna
 name:
   zh: 千夏 · 绝区零外观主题
   en: Sunna · ZZZ appearance theme
 author: xkxkiscoder
 description: 绝区零「千夏」主题皮肤：两套主题（立绘/影画）、五个可调图层、可拖动 Q 版挂件与右下角调色画板，支持浅色/深色。
+repo: https://github.com/xkxkiscoder/dsh-ui-zzz-sunna
+package: dsh-ui-zzz-sunna
+rowId: dsh-ui-zzz-sunna
+category: theme
+tags:
+  - appearance
+modes:
+  - light
+  - dark
+install:
+  target: github:xkxkiscoder/dsh-ui-zzz-sunna#5e98100379b9527df5928b797131734d724e614f
+  version: 0.1.6
+  commit: 5e98100379b9527df5928b797131734d724e614f
+compatibility:
+  dsh: 0.1.5-alpha.2
+  platform:
+    - web
+screenshots:
+  - https://raw.githubusercontent.com/xkxkiscoder/dsh-ui-zzz-sunna/5e98100379b9527df5928b797131734d724e614f/docs/preview-portrait-light.webp
+  - https://raw.githubusercontent.com/xkxkiscoder/dsh-ui-zzz-sunna/5e98100379b9527df5928b797131734d724e614f/docs/preview-portrait-dark.webp
+  - https://raw.githubusercontent.com/xkxkiscoder/dsh-ui-zzz-sunna/5e98100379b9527df5928b797131734d724e614f/docs/preview-overlay-light.webp
+  - https://raw.githubusercontent.com/xkxkiscoder/dsh-ui-zzz-sunna/5e98100379b9527df5928b797131734d724e614f/docs/preview-overlay-dark.webp
+  - https://raw.githubusercontent.com/xkxkiscoder/dsh-ui-zzz-sunna/5e98100379b9527df5928b797131734d724e614f/docs/widgets.webp
+review:
+  compatibility: verified
+  preview: verified
+  installation: manual-only
+health:
+  status: improvements
+  checks:
+    readmeScreenshots: pass
+    compatibility: pass
+    installation: improve
+    installCommand: pass
+    topic: pass
+  suggestions:
+    - 建议补全稳定的 package 名称、dsh.client Web 声明、row ID 和已构建客户端入口，以符合 dsh 插件要求并获得更顺畅的一键安装体验。
+license:
+  code: CC-BY-NC-SA-4.0
+  commercialUse: false
+featuredRank: 1000
+starsSnapshot: 0
+releaseUpdatedAt: 2026-10-05T06:03:46.430Z
+metadataUpdatedAt: 2026-10-05T06:03:46.430Z
+starsUpdatedAt: 2026-10-05T06:03:46.430Z
+updatedAt: 2026-10-05T06:03:46.430Z
