@@ -5,6 +5,85 @@
 安装版本固定到对应收录 commit；预览图使用 registry 中记录的仓库素材。收录市场不等于 DSH 官方、安全团队或市场对皮肤的安全背书；兼容性和素材授权状态请以皮肤仓库说明为准。
 
 
+<a id="recent-since-2026-09-10"></a>
+
+## 2026-09-10 至 2026-10-05 · 新增 7 项
+
+9 月 8 日批量之后新进主分支的社区条目，按进入日期倒序。
+
+### 2026-10-05 · 终末地主题（改版）
+
+参考《明日方舟：终末地》官网视觉风格的 DSH Web 主题：奶油纸底、信号黄与武陵青强调色、通体直角；在上游基础上增加中央散景。`rowId` 为 `theme-endfield-re`，可与上游终末地主题并存。
+
+- GitHub：[SkillyNotFound/dsh-theme-endfield-re](https://github.com/SkillyNotFound/dsh-theme-endfield-re)
+- 收录版本：`1.1.5-re.1`
+- 固定 commit：`569754230cb05266a7c30f946e579cd04ea4a656`
+- 许可：MIT
+
+<img src="https://raw.githubusercontent.com/SkillyNotFound/dsh-theme-endfield-re/569754230cb05266a7c30f946e579cd04ea4a656/assets/screenshots1.webp" width="60%" alt="终末地主题（改版）预览">
+
+### 2026-10-05 · 千夏 · 绝区零外观主题
+
+绝区零「千夏」主题：立绘 / 影画两套外观、可调图层、可拖动 Q 版挂件与调色画板，支持浅色 / 深色。
+
+- GitHub：[xkxkiscoder/dsh-ui-zzz-sunna](https://github.com/xkxkiscoder/dsh-ui-zzz-sunna)
+- 收录版本：`0.1.6`
+- 固定 commit：`5e98100379b9527df5928b797131734d724e614f`
+- 许可：CC-BY-NC-SA-4.0（不可商用）
+
+<img src="https://raw.githubusercontent.com/xkxkiscoder/dsh-ui-zzz-sunna/5e98100379b9527df5928b797131734d724e614f/docs/preview-portrait-light.webp" width="60%" alt="千夏主题浅色立绘预览">
+
+### 2026-10-02 · 鲸鱼娘动态壁纸
+
+把「DeepSeek 鲸鱼娘」动态壁纸视频设为 DSH Web 全屏背景。
+
+- GitHub：[QWEQ-CELL-DEL/dsh-whale-girl-wallpaper](https://github.com/QWEQ-CELL-DEL/dsh-whale-girl-wallpaper)
+- 收录版本：`0.1.0`
+- 固定 commit：`f69490ef6563a481abe8a792c2283657d06e18a8`
+- 许可：MIT
+
+<img src="https://raw.githubusercontent.com/QWEQ-CELL-DEL/dsh-whale-girl-wallpaper/f69490ef6563a481abe8a792c2283657d06e18a8/screenshots/preview-1.png" width="60%" alt="鲸鱼娘动态壁纸预览">
+
+### 2026-09-22 · Kami
+
+纸媒 / editorial 风格：暖羊皮纸画布、墨蓝强调色、衬线排版与发丝线边框，浅色 / 深色双模式。
+
+- GitHub：[quaner1234-cmd/DSH-THEME-KAMI](https://github.com/quaner1234-cmd/DSH-THEME-KAMI)
+- 收录版本：`0.1.0`
+- 固定 commit：`12f2976fde989da578d362a1f038281c214cf3b2`
+
+<img src="https://raw.githubusercontent.com/quaner1234-cmd/DSH-THEME-KAMI/1fb0d23fe019eac6fb03cc3eb2f1b51c35790459/assets/preview-light.png" width="60%" alt="Kami 浅色预览">
+
+### 2026-09-13 · Pip-Boy 终端
+
+辐射 Pip-Boy 风格绿磷光主题：Vault-Tec 角框、玻璃反光，以及合成终端音效。
+
+- GitHub：[laohankk/dsh-crt-skins](https://github.com/laohankk/dsh-crt-skins) · `packages/skins/pipboy-terminal`
+- 收录版本：`1.0.1`
+- 固定 commit：`fef62785ee0a42ecd23ed6c4dd82879cf45ffb3f`
+
+<img src="https://raw.githubusercontent.com/laohankk/dsh-crt-skins/60a8bc681342b2676af620d44119167fec6a1d37/packages/skins/pipboy-terminal/preview/preview.png" width="60%" alt="Pip-Boy 终端预览">
+
+### 2026-09-13 · CRT 终端（琥珀）
+
+琥珀磷光 CRT 终端主题：扫描线、曲面暗角、方角面板，以及合成终端音效。
+
+- GitHub：[laohankk/dsh-crt-skins](https://github.com/laohankk/dsh-crt-skins) · `packages/skins/crt-terminal`
+- 收录版本：`1.0.1`
+- 固定 commit：`fef62785ee0a42ecd23ed6c4dd82879cf45ffb3f`
+
+<img src="https://raw.githubusercontent.com/laohankk/dsh-crt-skins/60a8bc681342b2676af620d44119167fec6a1d37/packages/skins/crt-terminal/preview/preview.png" width="60%" alt="CRT 终端琥珀预览">
+
+### 2026-09-10 · dsh-skin-Yumemizuki
+
+《原神》梦见月瑞希粉丝主题：暖色纸灯日间与夜樱月夜，分层背景。
+
+- GitHub：[a39485972-sudo/dsh-skin-Yumemizuki](https://github.com/a39485972-sudo/dsh-skin-Yumemizuki)
+- 收录版本：`0.1.0`
+- 固定 commit：`204623ab9ae3a0835d168f803c2b23ed098c670c`
+
+<img src="https://raw.githubusercontent.com/a39485972-sudo/dsh-skin-Yumemizuki/204623ab9ae3a0835d168f803c2b23ed098c670c/preview/light.png" width="60%" alt="Yumemizuki 浅色预览">
+
 <a id="batch-2026-09-08"></a>
 
 ## 2026-09-08 · 新增 73 项主题与外观扩展
