@@ -39,7 +39,7 @@ describe('market self update', () => {
       const updater = createMarketUpdater('web', runner, { currentVersion: '0.1.15', fetch: fetchLatest, cacheMs: 0 })
 
       expect(updater.restartRequired).toBe(false)
-      await expect(updater.status()).resolves.toEqual({ currentVersion: '0.1.15', latestVersion: '0.1.16', updateAvailable: true })
+      await expect(updater.status()).resolves.toEqual({ currentVersion: '0.1.15', latestVersion: '0.1.16', updateAvailable: true, localLink: false })
       await expect(updater.update()).resolves.toEqual({ currentVersion: '0.1.16', latestVersion: '0.1.16', updateAvailable: false })
       expect(updater.restartRequired).toBe(true)
       expect(fetchLatest).toHaveBeenCalledWith(MARKET_NPM_METADATA_URL, expect.objectContaining({ headers: expect.objectContaining({ accept: 'application/json' }) }))
@@ -48,7 +48,7 @@ describe('market self update', () => {
         signal: expect.any(AbortSignal),
         env: { pnpm_config_fetch_timeout: '600000' },
       }))
-      await expect(updater.status()).resolves.toEqual({ currentVersion: '0.1.16', latestVersion: '0.1.16', updateAvailable: false })
+      await expect(updater.status()).resolves.toEqual({ currentVersion: '0.1.16', latestVersion: '0.1.16', updateAvailable: false, localLink: false })
     } finally {
       if (previousDshHome === undefined) delete process.env.DSH_HOME
       else process.env.DSH_HOME = previousDshHome
@@ -77,6 +77,42 @@ describe('market self update', () => {
 
     await expect(updater.update()).resolves.toMatchObject({ updateAvailable: false })
     expect(runner).not.toHaveBeenCalled()
+  })
+
+  it('refuses to self-update a link: install so a local fork is never overwritten', async () => {
+    // 场景：市场以 link: 指向本地 fork/工作区。自我更新的实现是
+    // `pnpm add dsh-skin-market@<latest>`，会把 fork 换成 npm 官方版 —— 必须拒绝。
+    const dshHome = mkdtempSync(join(tmpdir(), 'dsh-market-self-update-link-'))
+    const profileDir = join(dshHome, 'profiles', 'desktop')
+    mkdirSync(profileDir, { recursive: true })
+    writeFileSync(
+      join(profileDir, 'package.json'),
+      JSON.stringify({ name: 'desktop', dependencies: { [MARKET_NPM_PACKAGE]: 'link:D:/somewhere/my-fork' } }),
+    )
+
+    const fetchLatest = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        'dist-tags': { latest: '0.1.16' },
+        versions: {
+          '0.1.16': {
+            version: '0.1.16',
+            gitHead: 'c'.repeat(40),
+            dist: { tarball: 'https://registry.npmjs.org/dsh-skin-market/-/dsh-skin-market-0.1.16.tgz' },
+          },
+        },
+      }),
+    })) as unknown as typeof fetch
+    const runner = vi.fn(async () => ({ exitCode: 0, stdout: '', stderr: '', timedOut: false }))
+    const updater = createMarketUpdater('desktop', runner, { currentVersion: '0.1.15', profileDir, fetch: fetchLatest, cacheMs: 0 })
+
+    // 状态里如实标记"链接安装"，供界面提示
+    await expect(updater.status(true)).resolves.toMatchObject({ updateAvailable: true, localLink: true })
+
+    // 更新被拒绝：update() 以失败语义抛错（既有约定），且不执行任何 pnpm 命令
+    await expect(updater.update()).rejects.toThrow(/本地链接/)
+    expect(runner).not.toHaveBeenCalled()
+    expect(updater.restartRequired).toBe(false)
   })
 
   it('aborts and waits for an in-flight self-update when the route is disposed', async () => {

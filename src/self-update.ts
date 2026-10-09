@@ -19,6 +19,24 @@ export interface MarketUpdateStatus {
   currentVersion: string
   latestVersion: string
   updateAvailable: boolean
+  /** 市场以 link: 方式安装（本地 fork/工作区）时为 true；此时禁止自我更新覆盖。 */
+  localLink?: boolean
+}
+
+/**
+ * 判断市场是否以 `link:` 方式装在该 profile 里（即本地 fork / 工作区）。
+ * 读取失败一律当作"非链接安装"，保持原有更新行为。
+ */
+function isLinkedInstall(profileDir: string): boolean {
+  try {
+    const manifest = JSON.parse(readFileSync(join(profileDir, 'package.json'), 'utf8')) as {
+      dependencies?: Record<string, unknown>
+    }
+    const spec = manifest.dependencies?.[MARKET_NPM_PACKAGE]
+    return typeof spec === 'string' && /^(link|file|workspace):/i.test(spec)
+  } catch {
+    return false
+  }
 }
 
 export type MarketUpdatePhase = 'queued' | 'checking' | 'downloading' | 'installing' | 'cancelling' | 'cancelled' | 'done' | 'failed'
@@ -159,6 +177,16 @@ export function createMarketUpdater(
       setOperation(operation, { phase: 'checking', message: '正在检查皮肤市场版本' })
       const before = await status(true)
       operation.status = before
+      // 本地 fork/工作区（link: 安装）：拒绝自我更新 —— 那一步会执行
+      // `pnpm add dsh-skin-market@<latest>`，把用户的本地改动替换成 npm 官方版。
+      if (before.localLink === true) {
+        setOperation(operation, {
+          phase: 'failed',
+          message: '当前皮肤市场以本地链接（link:）方式安装，自我更新会覆盖你的本地改动，已跳过。请到 fork 目录自行拉取上游更新后重新构建。',
+          status: before,
+        })
+        return
+      }
       if (!before.updateAvailable) {
         setOperation(operation, { phase: 'done', message: '已经是最新版本', status: before })
         return
@@ -258,7 +286,14 @@ export function createMarketUpdater(
       throw new Error('npm 市场构件缺少可验证的版本来源或下载地址')
     }
     const release: MarketRelease = { version: latestVersion, gitHead: gitHead.toLowerCase(), tarball }
-    const next = { currentVersion: installedVersion, latestVersion: release.version, updateAvailable: compareVersions(release.version, installedVersion) > 0 }
+    // 链接安装（link:）说明市场来自本地 fork/工作区；此时「自我更新」会用 npm 官方版覆盖它，
+    // 因此单独标记出来，由 updateTarget 拒绝执行，避免抹掉用户的自定义改动。
+    const next = {
+      currentVersion: installedVersion,
+      latestVersion: release.version,
+      updateAvailable: compareVersions(release.version, installedVersion) > 0,
+      localLink: isLinkedInstall(profileDir),
+    }
     latestRelease = release
     cached = { checkedAt: Date.now(), status: next, release }
     return next
