@@ -570,7 +570,7 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
   const [selectedId, setSelectedId] = useState<string>('')
   const [query, setQuery] = useState('')
   const [homeQuery, setHomeQuery] = useState('')
-  const [filter, setFilter] = useState<'all' | 'installed'>('all')
+  const [filter, setFilter] = useState<'all' | 'installed' | 'auto'>('all')
   const [sortBy, setSortBy] = useState<'stars' | 'latest'>('stars')
   const [visibleCount, setVisibleCount] = useState(CATALOG_BATCH_SIZE)
   const [homeVisibleCount, setHomeVisibleCount] = useState(CATALOG_BATCH_SIZE)
@@ -928,9 +928,11 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
   const manualInstallKeyword = selected === undefined ? '' : createSkinInstallSearchKeyword(selected)
   const filtered = useMemo(() => skins.filter(skin => {
     if (!matchesCatalogSearch(skin, query)) return false
+    // 'auto'：只保留能在当前宿主一键安装的皮肤（判定与卡片上的「需手动安装」同源，避免两处口径不一致）
+    if (filter === 'auto') return !isManualOnly(skin)
     if (filter === 'installed') return runtimeFor(states, skin.id).installation !== 'missing'
     return true
-  }).sort((a, b) => filter === 'installed' ? compareInstalledSkinOrder(a, b, states) : compareSkinOrder(a, b, sortBy)), [skins, states, filter, query, sortBy])
+  }).sort((a, b) => filter === 'installed' ? compareInstalledSkinOrder(a, b, states) : compareSkinOrder(a, b, sortBy)), [skins, states, filter, query, sortBy, hostKind])
   const visibleSkins = useMemo(() => {
     const visible = filtered.slice(0, visibleCount)
     const selectedSkin = filtered.find(skin => skin.id === selectedId)
@@ -943,7 +945,9 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
     .sort((a, b) => compareInstalledSkinOrder(a, b, states)), [skins, states])
   const discoverySkins = useMemo(() => skins
     .filter(skin => matchesCatalogSearch(skin, homeQuery))
-    .sort((a, b) => compareSkinOrder(a, b, sortBy)), [homeQuery, skins, sortBy])
+    // 与左侧目录的「可一键安装」筛选保持同一套判定
+    .filter(skin => filter !== 'auto' || !isManualOnly(skin))
+    .sort((a, b) => compareSkinOrder(a, b, sortBy)), [homeQuery, skins, sortBy, filter, hostKind])
   const visibleDiscoverySkins = useMemo(() => discoverySkins.slice(0, homeVisibleCount), [discoverySkins, homeVisibleCount])
   const installedRowSkins = installedSkins.length > installedSlots ? installedSkins.slice(0, Math.max(1, installedSlots - 1)) : installedSkins
   const installedOverflow = installedSkins.length > installedRowSkins.length
@@ -1317,7 +1321,7 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
     const open = () => location === 'installed' ? openInstalledBrowser(skin.id) : openBrowser(skin.id, 'discover')
     return <article className={css.homeCard} data-active={itemState.activation === 'active' ? 'true' : undefined} data-actions={actionCount} key={`${location}:${skin.id}`}>
       <Button variant="ghost" className={`${css.homeCardOpen} dsh-skin-media-hover`} aria-current={itemState.activation === 'active' ? 'true' : undefined} aria-label={location === 'installed' ? `${skin.name.zh} 已安装卡片` : `${skin.name.zh} 界面预览`} onClick={open}>
-        <span className={css.homeCardMedia}><PreviewMedia skin={skin} src={getCatalogListScreenshot(skin)} fallbackSources={getCatalogScreenshotUrls(skin)} alt={`${skin.name.zh} 界面预览`} kind="recommendation" loading="lazy" /></span>
+        <span className={css.homeCardMedia}><PreviewMedia skin={skin} src={getCatalogListScreenshot(skin)} fallbackSources={getCatalogScreenshotUrls(skin)} alt={`${skin.name.zh} 界面预览`} kind="recommendation" loading="lazy" />{itemState.installation === 'installed' && <span className={css.homeCardStateBadge} data-state={itemState.activation === 'active' ? 'active' : 'installed'}>{itemState.activation === 'active' ? '使用中' : itemState.activation === 'restart-required' ? '待重启' : '已安装'}</span>}</span>
         <span className={css.homeCardCopy}>
           <span className={css.homeCardTitleRow}><strong title={skin.name.zh}>{skin.name.zh}</strong>{location === 'discover' && <span className={css.feedMeta}><StarIcon size={12} aria-hidden="true" /> {skin.githubStars}</span>}</span>
           <span className={css.homeCardDescription} title={skin.description}>{displayTitle(skin.description)}</span>
@@ -1482,6 +1486,11 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
           <section className={css.homeSection} aria-labelledby="discover-skins-title">
             <div className={css.homeSectionTitle}>
               <h3 id="discover-skins-title">{homeQuery.trim() === '' ? '发现更多' : '搜索结果'}</h3>
+              <div className={css.filters}>
+                <Pill className={css.filterPill} active={filter === 'all'} aria-pressed={filter === 'all'} onClick={() => { setFilter('all'); setSortBy('stars') }}>{homeQuery.trim() === '' ? '全部' : '全部结果'}</Pill>
+                <Pill className={css.filterPill} active={filter === 'auto'} aria-pressed={filter === 'auto'} title="只显示能在当前环境一键安装的皮肤" onClick={() => setFilter('auto')}>可一键安装</Pill>
+                <Pill className={css.filterPill} active={filter === 'installed'} aria-pressed={filter === 'installed'} title="只显示已安装的皮肤" onClick={() => setFilter('installed')}>已安装</Pill>
+              </div>
               <Button className={css.sortButton} variant="ghost" size="sm" onClick={() => setSortBy(value => value === 'stars' ? 'latest' : 'stars')}>{sortBy === 'stars' ? 'Stars' : '最新'} <IconChevronDownOutline /></Button>
             </div>
             {catalogLoading && skins.length === 0 ? <div className={css.homeLoading}><IconLoadingOutline /> 正在加载皮肤…</div> : visibleDiscoverySkins.length > 0 ? <div className={css.discoveryGrid}>
@@ -1502,6 +1511,7 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
           <div className={css.filterBar}>
             <div className={css.filters}>
               <Pill className={css.filterPill} active={filter === 'all'} aria-pressed={filter === 'all'} onClick={() => { setFilter('all'); setSortBy('stars') }}>全部</Pill>
+              <Pill className={css.filterPill} active={filter === 'auto'} aria-pressed={filter === 'auto'} title="只显示能在当前环境一键安装的皮肤" onClick={() => setFilter('auto')}>可一键安装</Pill>
               <Pill className={css.filterPill} active={filter === 'installed'} aria-pressed={filter === 'installed'} onClick={() => setFilter('installed')}>已安装</Pill>
             </div>
             <Button className={css.sortButton} variant="ghost" size="sm" onClick={() => setSortBy(value => value === 'stars' ? 'latest' : 'stars')}>
