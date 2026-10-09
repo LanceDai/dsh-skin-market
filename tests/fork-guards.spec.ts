@@ -40,6 +40,24 @@ describe('fork guards: 可一键安装筛选', () => {
     // 依赖数组必须包含 states，否则安装状态变化后列表不会重算
     expect(head).toMatch(/\[homeQuery, skins, sortBy, filter, hostKind, states\]/)
   })
+
+  it('选中筛选时不再重复展示「已安装」区块', () => {
+    // 真实缺陷（用户实测发现）：选中「已安装」时，顶部「已安装」区块与下方列表把同一批皮肤列了两遍。
+    const marker = 'aria-labelledby="installed-skins-title"'
+    const at = CLIENT.indexOf(marker)
+    expect(at).toBeGreaterThan(-1)
+    const condition = CLIENT.slice(Math.max(0, at - 240), at)
+    expect(condition).toMatch(/homeQuery\.trim\(\) === '' && filter === 'all'/)
+  })
+
+  it('列表标题随筛选变化，避免「已安装」筛选下仍写着"发现更多"', () => {
+    const at = CLIENT.indexOf('id="discover-skins-title"')
+    expect(at).toBeGreaterThan(-1)
+    const heading = CLIENT.slice(at, at + 320)
+    expect(heading).toMatch(/'搜索结果'/)
+    expect(heading).toMatch(/filter === 'installed'\s*\?\s*'已安装'/)
+    expect(heading).toMatch(/filter === 'auto'\s*\?\s*'可一键安装'/)
+  })
 })
 
 describe('fork guards: 卡片状态徽标', () => {
