@@ -62,13 +62,17 @@ describe('fork guards: 可一键安装筛选', () => {
     expect(head).toMatch(/\[homeQuery, skins, sortBy, filter, hostKind, states\]/)
   })
 
-  it('选中筛选时不再重复展示「已安装」区块', () => {
-    // 真实缺陷（用户实测发现）：选中「已安装」时，顶部「已安装」区块与下方列表把同一批皮肤列了两遍。
+  it('「已安装」区块不随筛选隐藏（用户要求：它始终展示已安装的皮肤）', () => {
+    // 曾走过一次弯路：为了让「已安装」筛选不重复展示，把这个区块在非 all 视图下隐藏了，
+    // 结果用户选「可一键安装」时看不到自己装了什么。正确语义：两个区域职责不同，互不影响。
     const marker = 'aria-labelledby="installed-skins-title"'
     const at = CLIENT.indexOf(marker)
     expect(at).toBeGreaterThan(-1)
-    const condition = CLIENT.slice(Math.max(0, at - 240), at)
-    expect(condition).toMatch(/homeQuery\.trim\(\) === '' && filter === 'all'/)
+    const condition = CLIENT.slice(Math.max(0, at - 260), at)
+    expect(condition).toMatch(/homeQuery\.trim\(\) === ''/)
+    // 条件里不得再出现 filter
+    expect(condition).not.toMatch(/filter === 'all'/)
+    expect(condition).not.toMatch(/filter !== 'all'/)
   })
 
   it('列表标题随筛选变化，避免筛选下仍写着"发现更多"', () => {

@@ -1518,9 +1518,10 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
             setHomeVisibleCount(value => Math.min(discoverySkins.length, value + CATALOG_BATCH_SIZE))
           }
         }}>
-          {/* 「已安装」区块只在"无筛选"时展示：一旦选中「已安装」或「可一键安装」，
-              下方列表本身就承担了筛选结果的展示，再显示这个区块就是同一批皮肤重复两遍。 */}
-          {homeQuery.trim() === '' && filter === 'all' && (loading || installedSkins.length > 0) && <section className={css.homeSection} aria-labelledby="installed-skins-title">
+          {/* 「已安装」区块与下方筛选列表是**两件事**，互不影响：
+              上方始终展示"你已经装了什么"，下方按选中的筛选展示可浏览的皮肤。
+              因此这里不加 filter 条件 —— 选「可一键安装」时它必须照常显示。 */}
+          {homeQuery.trim() === '' && (loading || installedSkins.length > 0) && <section className={css.homeSection} aria-labelledby="installed-skins-title">
             <div className={css.homeSectionTitle}><h3 id="installed-skins-title">已安装</h3><span>正在使用、常驻优先，其余按最近操作排序</span></div>
             {loading ? <div className={css.installedRow} style={{ '--installed-columns': installedSlots } as CSSProperties} role="status" aria-label="正在加载已安装皮肤"><span className={css.srOnly}>正在加载已安装皮肤…</span>{Array.from({ length: installedSlots }, (_, index) => <article className={css.installedSkeletonCard} key={index} aria-hidden="true"><span /><span><i /><i /></span></article>)}</div> : <div className={css.installedRow} style={{ '--installed-columns': installedSlots } as CSSProperties}>
               {installedRowSkins.map(skin => renderHomeCard(skin, 'installed'))}
