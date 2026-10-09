@@ -30,8 +30,29 @@ describe('fork guards: 可一键安装筛选', () => {
     expect(CLIENT).toMatch(/setFilter\('auto'\)/)
   })
 
-  it('首页列表（发现更多）必须处理全部筛选取值，不能只处理 auto', () => {
-    // 真实缺陷（用户实测发现）：首页列表只处理了 'auto'，点「已安装」时首页仍展示未安装的皮肤。
+  it('首页筛选栏只保留「全部 / 可一键安装」，不含「已安装」', () => {
+    // 设计决定（用户要求）：已安装的皮肤由上方「已安装」区块展示，
+    // 首页再放一个「已安装」药丸会让同一批皮肤出现两遍。
+    const at = CLIENT.indexOf('id="discover-skins-title"')
+    expect(at).toBeGreaterThan(-1)
+    const bar = CLIENT.slice(at, at + 900)
+    const pills = [...bar.matchAll(/<Pill className=\{css\.filterPill\}([\s\S]*?)<\/Pill>/g)].map((m) => m[1])
+    expect(pills.length).toBe(2)
+    expect(bar).not.toMatch(/setFilter\('installed'\)/)
+  })
+
+  it('左栏筛选栏仍保留「已安装」（「查看全部已安装」抽屉依赖它）', () => {
+    const at = CLIENT.indexOf("aria-label={t('catalog')}")
+    expect(at).toBeGreaterThan(-1)
+    const bar = CLIENT.slice(at, at + 900)
+    expect(bar).toMatch(/setFilter\('installed'\)/)
+    // 打开已安装抽屉时会按来源设置筛选
+    expect(CLIENT).toMatch(/setFilter\(origin === 'installed' \? 'installed' : 'all'\)/)
+  })
+
+  it('首页列表（发现更多）必须处理 auto 与 installed 两种取值', () => {
+    // 真实缺陷（用户实测发现）：首页列表只处理了 'auto'，带上 installed 状态时首页仍展示未安装的皮肤。
+    // 首页筛选栏虽无「已安装」入口，但 filter 与左栏/抽屉共享，因此列表仍需处理该取值。
     const start = CLIENT.indexOf('const discoverySkins = useMemo')
     expect(start).toBeGreaterThan(-1)
     const head = CLIENT.slice(start, start + 700)
@@ -50,12 +71,11 @@ describe('fork guards: 可一键安装筛选', () => {
     expect(condition).toMatch(/homeQuery\.trim\(\) === '' && filter === 'all'/)
   })
 
-  it('列表标题随筛选变化，避免「已安装」筛选下仍写着"发现更多"', () => {
+  it('列表标题随筛选变化，避免筛选下仍写着"发现更多"', () => {
     const at = CLIENT.indexOf('id="discover-skins-title"')
     expect(at).toBeGreaterThan(-1)
     const heading = CLIENT.slice(at, at + 320)
     expect(heading).toMatch(/'搜索结果'/)
-    expect(heading).toMatch(/filter === 'installed'\s*\?\s*'已安装'/)
     expect(heading).toMatch(/filter === 'auto'\s*\?\s*'可一键安装'/)
   })
 })

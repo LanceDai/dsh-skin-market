@@ -580,6 +580,10 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
   const [selectedId, setSelectedId] = useState<string>('')
   const [query, setQuery] = useState('')
   const [homeQuery, setHomeQuery] = useState('')
+  // 首页筛选栏只提供「全部 / 可一键安装」两个入口：已安装的皮肤由上方「已安装」区块承担，
+  // 再给一个「已安装」药丸会让同一批皮肤在两处重复。
+  // 但 'installed' 这个取值仍然保留：左栏目录的筛选栏、「查看全部已安装」抽屉都用它，
+  // 因此首页列表仍需处理该取值（用户从抽屉切回首页时状态是共享的）。
   const [filter, setFilter] = useState<'all' | 'installed' | 'auto'>('all')
   // peer 兼容预检结果：只在查看某个皮肤时按需请求一次（不做全量扫描，避免拖慢列表）
   const [peerVerdicts, setPeerVerdicts] = useState<Record<string, PeerCheckResponse | 'error'>>({})
@@ -962,6 +966,7 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
     if (!matchesCatalogSearch(skin, query)) return false
     // 'auto'：只保留能在当前宿主一键安装的皮肤（判定与卡片上的「需手动安装」同源，避免两处口径不一致）
     if (filter === 'auto') return !isManualOnly(skin)
+    // 'installed'：左栏筛选栏与「查看全部已安装」抽屉使用（首页筛选栏不再提供该入口）
     if (filter === 'installed') return runtimeFor(states, skin.id).installation !== 'missing'
     return true
   }).sort((a, b) => filter === 'installed' ? compareInstalledSkinOrder(a, b, states) : compareSkinOrder(a, b, sortBy)), [skins, states, filter, query, sortBy, hostKind])
@@ -977,8 +982,8 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
     .sort((a, b) => compareInstalledSkinOrder(a, b, states)), [skins, states])
   const discoverySkins = useMemo(() => skins
     .filter(skin => matchesCatalogSearch(skin, homeQuery))
-    // 首页列表与筛选栏共用同一个 filter 状态，因此这里必须把三种取值都处理掉
-    // （此前只处理了 'auto'，导致点「已安装」时首页仍在展示未安装的皮肤）
+    // 首页筛选栏只有「全部 / 可一键安装」，但 filter 与左栏共享，
+    // 因此也要处理从抽屉带过来的 'installed'（否则会显示未安装的皮肤）
     .filter(skin => filter !== 'auto' || !isManualOnly(skin))
     .filter(skin => filter !== 'installed' || runtimeFor(states, skin.id).installation !== 'missing')
     .sort((a, b) => compareSkinOrder(a, b, sortBy)), [homeQuery, skins, sortBy, filter, hostKind, states])
@@ -1528,16 +1533,13 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
               <h3 id="discover-skins-title">{
                 homeQuery.trim() !== ''
                   ? '搜索结果'
-                  : filter === 'installed'
-                    ? '已安装'
-                    : filter === 'auto'
-                      ? '可一键安装'
-                      : '发现更多'
+                  : filter === 'auto'
+                    ? '可一键安装'
+                    : '发现更多'
               }</h3>
               <div className={css.filters}>
                 <Pill className={css.filterPill} active={filter === 'all'} aria-pressed={filter === 'all'} onClick={() => { setFilter('all'); setSortBy('stars') }}>{homeQuery.trim() === '' ? '全部' : '全部结果'}</Pill>
                 <Pill className={css.filterPill} active={filter === 'auto'} aria-pressed={filter === 'auto'} title="只显示能在当前环境一键安装的皮肤" onClick={() => setFilter('auto')}>可一键安装</Pill>
-                <Pill className={css.filterPill} active={filter === 'installed'} aria-pressed={filter === 'installed'} title="只显示已安装的皮肤" onClick={() => setFilter('installed')}>已安装</Pill>
               </div>
               <Button className={css.sortButton} variant="ghost" size="sm" onClick={() => setSortBy(value => value === 'stars' ? 'latest' : 'stars')}>{sortBy === 'stars' ? 'Stars' : '最新'} <IconChevronDownOutline /></Button>
             </div>
