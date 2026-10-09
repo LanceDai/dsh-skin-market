@@ -9,6 +9,7 @@ import type { DshRuntime, MarketHostKind, Operation, OperationKind } from './typ
 import type { RestartScheduler } from './restart.ts'
 import { createMarketUpdater, packageVersion, type MarketUpdater } from './self-update.ts'
 import { exportLogs } from './log.ts'
+import { checkSkinPeers } from './peer-check.ts'
 
 export interface WebServerService {
   register(route: {
@@ -168,6 +169,25 @@ export function mountRoutes(host: SkinMarketHost, options: RouteOptions): () => 
         hostKind,
         dshVersion: options.runtime?.version ?? 'unknown',
       }, operationId))
+    } }),
+    host.webServer.register({ kind: 'exact', path: '/dsh-skin-market/compatibility', handler: async (request, response) => {
+      if (!method(request, response, 'GET')) return
+      try {
+        const url = new URL(request.url ?? '/', 'http://localhost')
+        const packageName = url.searchParams.get('package') ?? ''
+        const packageVersion = url.searchParams.get('version')
+        // 只接受 npm 包名形态，避免这个路由被当成任意 URL 的代理
+        if (!/^(@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]{0,213}$/i.test(packageName)) {
+          return sendJson(response, 400, { error: 'invalid package name' })
+        }
+        if (packageVersion !== null && !/^[\w.+-]{1,64}$/.test(packageVersion)) {
+          return sendJson(response, 400, { error: 'invalid version' })
+        }
+        const result = await checkSkinPeers(packageName, packageVersion, options.runtime?.version ?? null)
+        sendJson(response, 200, result)
+      } catch (error) {
+        sendJson(response, 502, { error: error instanceof Error ? error.message : String(error) })
+      }
     } }),
     host.webServer.register({ kind: 'exact', path: '/dsh-skin-market/state', handler: (request, response) => {
       if (!method(request, response, 'GET')) return

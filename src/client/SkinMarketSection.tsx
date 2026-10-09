@@ -106,6 +106,16 @@ interface MarketStateResponse {
   marketUpdateRestartRequired?: boolean
 }
 
+/** peer 兼容预检结果（GET /dsh-skin-market/compatibility）。 */
+interface PeerCheckResponse {
+  packageName: string
+  version: string | null
+  verdict: 'ok' | 'blocked' | 'unknown'
+  reason: string
+  offenders: string[]
+  cached: boolean
+}
+
 interface MarketUpdateStatus {
   currentVersion: string
   latestVersion: string
@@ -571,6 +581,8 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
   const [query, setQuery] = useState('')
   const [homeQuery, setHomeQuery] = useState('')
   const [filter, setFilter] = useState<'all' | 'installed' | 'auto'>('all')
+  // peer 兼容预检结果：只在查看某个皮肤时按需请求一次（不做全量扫描，避免拖慢列表）
+  const [peerVerdicts, setPeerVerdicts] = useState<Record<string, PeerCheckResponse | 'error'>>({})
   const [sortBy, setSortBy] = useState<'stars' | 'latest'>('stars')
   const [visibleCount, setVisibleCount] = useState(CATALOG_BATCH_SIZE)
   const [homeVisibleCount, setHomeVisibleCount] = useState(CATALOG_BATCH_SIZE)
@@ -908,6 +920,26 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
   }, [])
   const selected = skins.find(skin => skin.id === selectedId) ?? skins[0]
   const selectedScreenshots = selected === undefined ? [] : getCatalogScreenshotUrls(selected)
+  // 只有「managed（可一键安装）」的皮肤才有 npm 包名/版本可查（manual-only 变体没有这两个字段）
+  const selectedManaged = selected?.install.desktop?.mode === 'managed' ? selected.install.desktop : undefined
+  const selectedPackage = selectedManaged?.packageName
+  const peerCheck = selected === undefined ? null : peerVerdicts[selected.id] ?? null
+
+  // peer 兼容预检：只在查看某个「可一键安装」的皮肤时按需请求一次（结果缓存在组件状态里）。
+  // 目的：这类包声明需要的 DSH 内部包版本可能与本机不符，安装会被版本闸门拒绝，
+  // 而失败原因只在 pnpm 日志里 —— 提前在详情页说明，避免用户白点。
+  useEffect(() => {
+    if (selected === undefined || selectedManaged === undefined) return
+    if (peerVerdicts[selected.id] !== undefined) return
+    const version = selectedManaged.packageVersion
+    const query = new URLSearchParams({ package: selectedManaged.packageName })
+    if (version !== undefined && version !== '') query.set('version', version)
+    let cancelled = false
+    void json<PeerCheckResponse>(`/dsh-skin-market/compatibility?${query.toString()}`)
+      .then(result => { if (!cancelled) setPeerVerdicts(current => ({ ...current, [selected.id]: result })) })
+      .catch(() => { if (!cancelled) setPeerVerdicts(current => ({ ...current, [selected.id]: 'error' })) })
+    return () => { cancelled = true }
+  }, [selected, selectedManaged, peerVerdicts])
   const shotCount = selectedScreenshots.length
   const state = selected === undefined ? null : runtimeFor(states, selected.id)
   const compatibilityUnverified = selected?.review?.compatibility === 'unverified'
@@ -1565,6 +1597,7 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
               <p className={css.description} title={selected.description}>{displayTitle(selected.description)}</p>
               <p className={css.author}>{githubRepoLabel(selected.repo)}</p>
               <p className={css.version}>版本 {selected.install.version}<span aria-hidden="true"> · </span>{compatibilityUnverified ? 'DSH 兼容性待验证' : `兼容 DSH ${selected.compatibility.dsh}`}{runtime?.version !== undefined && runtime.version !== null && <><span aria-hidden="true"> · </span>当前 DSH {runtime.version}</>}<StatusLabel active={state.activation === 'active'}>{statusLabel(state)}</StatusLabel></p>
+              {peerCheck !== null && peerCheck !== 'error' && peerCheck.verdict === 'blocked' && <p className={css.notice} role="alert">{peerCheck.reason}（如需强行安装，须在插件管理器里授予精确版本豁免）</p>}
             </div>
           </header>
 
