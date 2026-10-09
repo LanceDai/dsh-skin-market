@@ -29,6 +29,17 @@ describe('fork guards: 可一键安装筛选', () => {
     expect(occurrences).toBeGreaterThanOrEqual(2)
     expect(CLIENT).toMatch(/setFilter\('auto'\)/)
   })
+
+  it('首页列表（发现更多）必须处理全部筛选取值，不能只处理 auto', () => {
+    // 真实缺陷（用户实测发现）：首页列表只处理了 'auto'，点「已安装」时首页仍展示未安装的皮肤。
+    const start = CLIENT.indexOf('const discoverySkins = useMemo')
+    expect(start).toBeGreaterThan(-1)
+    const head = CLIENT.slice(start, start + 700)
+    expect(head).toMatch(/filter !== 'auto' \|\| !isManualOnly\(skin\)/)
+    expect(head).toMatch(/filter !== 'installed' \|\| runtimeFor\(states, skin\.id\)\.installation !== 'missing'/)
+    // 依赖数组必须包含 states，否则安装状态变化后列表不会重算
+    expect(head).toMatch(/\[homeQuery, skins, sortBy, filter, hostKind, states\]/)
+  })
 })
 
 describe('fork guards: 卡片状态徽标', () => {

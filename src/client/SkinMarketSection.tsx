@@ -977,9 +977,11 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
     .sort((a, b) => compareInstalledSkinOrder(a, b, states)), [skins, states])
   const discoverySkins = useMemo(() => skins
     .filter(skin => matchesCatalogSearch(skin, homeQuery))
-    // 与左侧目录的「可一键安装」筛选保持同一套判定
+    // 首页列表与筛选栏共用同一个 filter 状态，因此这里必须把三种取值都处理掉
+    // （此前只处理了 'auto'，导致点「已安装」时首页仍在展示未安装的皮肤）
     .filter(skin => filter !== 'auto' || !isManualOnly(skin))
-    .sort((a, b) => compareSkinOrder(a, b, sortBy)), [homeQuery, skins, sortBy, filter, hostKind])
+    .filter(skin => filter !== 'installed' || runtimeFor(states, skin.id).installation !== 'missing')
+    .sort((a, b) => compareSkinOrder(a, b, sortBy)), [homeQuery, skins, sortBy, filter, hostKind, states])
   const visibleDiscoverySkins = useMemo(() => discoverySkins.slice(0, homeVisibleCount), [discoverySkins, homeVisibleCount])
   const installedRowSkins = installedSkins.length > installedSlots ? installedSkins.slice(0, Math.max(1, installedSlots - 1)) : installedSkins
   const installedOverflow = installedSkins.length > installedRowSkins.length
