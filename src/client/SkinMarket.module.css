@@ -109,6 +109,7 @@
 .homeCardDescription { display: -webkit-box; overflow: hidden; color: var(--dsw-alias-label-secondary); font-size: 11px; line-height: 17px; text-overflow: ellipsis; white-space: normal; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
 .homeCardFooter { position: absolute; z-index: 1; right: 0; bottom: 0; left: 0; display: flex; min-width: 0; min-height: 24px; align-items: center; gap: 8px; padding: 0 6px 10px 12px; color: var(--dsw-alias-label-caption); font-size: 11px; line-height: 17px; }
 .homeCardRepo { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.homeCardPeerBlocked { flex: none; padding: 1px 6px; border-radius: 999px; border: 1px solid currentColor; color: var(--dsw-alias-state-warning-primary); font-size: 10px; line-height: 14px; white-space: nowrap; }
 .feedMeta { display: inline-flex; flex: none; align-items: center; gap: 4px; white-space: nowrap; }
 .cardInlineActions { display: inline-flex; min-width: 0; align-items: center; gap: 4px; flex: none; }
 .cardAction { min-height: 24px; height: 24px; padding-inline: 8px; font-size: 11px; line-height: 16px; flex: none; }

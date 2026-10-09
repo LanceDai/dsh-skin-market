@@ -1333,6 +1333,8 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
   }
   const renderHomeCard = (skin: CatalogSkin, location: 'installed' | 'discover') => {
     const itemState = runtimeFor(states, skin.id)
+    const peerVerdict = peerVerdicts[skin.id]
+    const peerBlocked = peerVerdict !== undefined && peerVerdict !== 'error' && peerVerdict.verdict === 'blocked' ? peerVerdict : null
     const cardMutation = liveOperationFor(operations, skin.id)
     const needsInstall = itemState.installation === 'missing' || itemState.installation === 'broken'
     const canMigrate = hostKind === 'dsh' && itemState.installation === 'installed' && itemState.sourceMigration !== undefined && !isManualOnly(skin)
@@ -1361,6 +1363,8 @@ export function SkinMarketSection({ t, clientRuntime, catalogCache = browserCata
       </Button>
       <div className={css.homeCardFooter}>
         <span className={css.homeCardRepo} title={githubRepoLabel(skin.repo)}>{githubRepoLabel(skin.repo)}</span>
+        {/* 预检结论：只有用户查看过该皮肤（因而已完成 peer 检查）且判定为装不上时才显示 */}
+        {peerBlocked !== null && <span className={css.homeCardPeerBlocked} title={peerBlocked.reason}>版本不兼容</span>}
         {stateText !== null && <StatusLabel active={itemState.activation === 'active'}>{stateText}</StatusLabel>}
         {actionCount > 0 && <div className={css.cardInlineActions} role="group" aria-label={`${skin.name.zh} 操作`}>
           {cardMutation !== undefined ? <span className={css.cardActionProgress}><IconLoadingOutline />{mutationLabels[cardMutation.kind]}</span> : <>
