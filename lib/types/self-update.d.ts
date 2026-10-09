@@ -6,6 +6,8 @@ export interface MarketUpdateStatus {
     currentVersion: string;
     latestVersion: string;
     updateAvailable: boolean;
+    /** 市场以 link: 方式安装（本地 fork/工作区）时为 true；此时禁止自我更新覆盖。 */
+    localLink?: boolean;
 }
 export type MarketUpdatePhase = 'queued' | 'checking' | 'downloading' | 'installing' | 'cancelling' | 'cancelled' | 'done' | 'failed';
 export interface MarketUpdateOperation {
