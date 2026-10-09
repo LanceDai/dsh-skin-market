@@ -27,6 +27,16 @@ const checkOnly = args.has('--check')
 const skipBuild = args.has('--no-build')
 const FETCH_TIMEOUT_MS = 120_000
 
+// Windows 控制台默认是 GBK，中文输出会变成乱码；这里统一切到 UTF-8。
+if (process.platform === 'win32') {
+  try {
+    spawnSync('chcp', ['65001'], { stdio: 'ignore' })
+    process.stdout.setDefaultEncoding?.('utf8')
+  } catch {
+    /* 切不过去也不影响功能，只是显示 */
+  }
+}
+
 const run = (command, commandArgs, options = {}) => {
   const result = spawnSync(command, commandArgs, {
     cwd: root,
